@@ -1,0 +1,21 @@
+{
+  "short_name": "RickFinance",
+  "name": "RickFinance - Riccardo Tota",
+  "icons": [
+    {
+      "src": "Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
