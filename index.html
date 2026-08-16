@@ -129,7 +129,7 @@
 
         <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Risparmio Mese</span>
+            <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Risparmio Mese Scorso</span>
             <i class="fa-solid fa-arrow-up-right-dots text-emerald-400"></i>
           </div>
           <div id="display-risparmio" class="text-2xl font-bold text-emerald-400">0%</div>
@@ -137,7 +137,6 @@
         </div>
       </div>
 
-      <!-- Tabella Movimenti Dashboard -->
       <div class="bg-[#0b1329] border border-slate-800/80 rounded-2xl p-5">
         <h2 class="text-lg font-semibold mb-4">Ultimi Movimenti</h2>
         <div class="overflow-x-auto">
@@ -150,30 +149,108 @@
                 <th class="pb-3 text-right">Importo</th>
               </tr>
             </thead>
-            <tbody id="table-dash-body" class="divide-y divide-slate-800/60 text-sm">
-              <!-- Righe dinamiche -->
-            </tbody>
+            <tbody id="table-dash-body" class="divide-y divide-slate-800/60 text-sm"></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- SEZIONE 2: SIMULATORE RISPARMIO -->
+    <!-- SEZIONE 2: SIMULATORE RISPARMIO (ORIGINALE RIPRISTINATO) -->
     <section id="page-simulatore" class="page-content hidden">
-      <h1 class="text-2xl sm:text-3xl font-bold mb-2">Simulatore Risparmio</h1>
-      <p class="text-slate-400 text-sm mb-6">Calcola l'accumulo dei tuoi risparmi nel tempo.</p>
+      <header class="mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-3">
+          <i class="fa-solid fa-piggy-bank text-sky-400"></i>
+          <span>Simulatore & Impostazione Risparmio Personalizzato</span>
+        </h1>
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">Digita liberamente il tuo obiettivo di risparmio o usalo insieme al calcolo IA.</p>
+      </header>
 
-      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl max-w-xl space-y-4">
-        <div>
-          <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Risparmio Mensile (€)</label>
-          <input type="number" id="sim-amount" value="300" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Pannello di Sinistra: Form Dati e Obiettivi -->
+        <div class="lg:col-span-4 bg-[#0b1329] border border-slate-800/80 p-5 sm:p-6 rounded-2xl space-y-5">
+          <h2 class="text-lg font-bold border-b border-slate-800/80 pb-3">I Tuoi Dati & Obiettivi</h2>
+
+          <div>
+            <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Stipendio Mensile Netto (€)</label>
+            <input type="number" id="sim-salary" value="2200" oninput="updateSimulation()" class="w-full bg-[#080e1e] border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-lg focus:outline-none focus:border-sky-500">
+          </div>
+
+          <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl space-y-3">
+            <span class="text-xs font-semibold text-sky-400 flex items-center gap-2">
+              <i class="fa-solid fa-bullseye"></i> Inserisci Risparmio Desiderato (% o €)
+            </span>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Quota %</label>
+                <input type="number" id="sim-pct" value="45" oninput="syncFromPct()" class="w-full bg-[#080e1e] border border-slate-800 rounded-lg px-3 py-2 text-white font-semibold focus:outline-none focus:border-sky-500">
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Importo €/mese</label>
+                <input type="number" id="sim-target" value="990" oninput="syncFromAmount()" class="w-full bg-[#080e1e] border border-slate-800 rounded-lg px-3 py-2 text-white font-semibold focus:outline-none focus:border-sky-500">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Spese Auto & Mobilità Mensili (€)</label>
+            <input type="number" id="sim-auto" value="350" oninput="updateSimulation()" class="w-full bg-[#080e1e] border border-slate-800 rounded-xl px-4 py-3 text-white font-semibold focus:outline-none focus:border-sky-500">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Altre Spese Personali/Svago (€)</label>
+            <input type="number" id="sim-svago" value="450" oninput="updateSimulation()" class="w-full bg-[#080e1e] border border-slate-800 rounded-xl px-4 py-3 text-white font-semibold focus:outline-none focus:border-sky-500">
+          </div>
         </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Mesi di accumulo</label>
-          <input type="number" id="sim-months" value="12" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500">
+
+        <!-- Pannello di Destra: KPI & Valutazione IA -->
+        <div class="lg:col-span-8 space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+              <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Risparmio Target Scritto</span>
+              <div id="sim-res-target" class="text-2xl font-bold text-emerald-400">€ 990,00</div>
+              <span id="sim-res-target-sub" class="text-xs text-emerald-400/80 mt-1 block">(45.0% dello stipendio)</span>
+            </div>
+
+            <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+              <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Accumulo Annuo Stimato</span>
+              <div id="sim-res-annuo" class="text-2xl font-bold text-sky-400">€ 11.880,00</div>
+              <span class="text-xs text-slate-500 mt-1 block">in 12 mesi al ritmo desiderato</span>
+            </div>
+
+            <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+              <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Risparmio Reale Mese Scorso</span>
+              <div id="sim-res-reale" class="text-2xl font-bold text-white">54.5%</div>
+              <span id="sim-res-reale-sub" class="text-xs text-slate-400 mt-1 block">€ 1200 mesi da parte</span>
+            </div>
+          </div>
+
+          <!-- Box Valutazione IA -->
+          <div class="bg-[#0b1329] border border-slate-800/80 p-6 rounded-2xl space-y-4">
+            <h3 class="font-bold text-lg flex items-center gap-2 text-sky-400">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Valutazione IA del Tuo Obiettivo di Risparmio</span>
+            </h3>
+
+            <p id="sim-ia-header" class="text-sm text-slate-200">
+              Hai impostato un target di risparmio personalizzato del <strong>45.0% (€ 990.00/mese)</strong>.
+            </p>
+
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li id="sim-ia-auto" class="flex items-start gap-2">
+                <span class="text-sky-400 mt-1">•</span>
+                <span><strong>Costi Auto (15.9% dello stipendio):</strong> Assorbono € 350.00 al mese.</span>
+              </li>
+              <li id="sim-ia-fattibilita" class="flex items-start gap-2">
+                <span class="text-sky-400 mt-1">•</span>
+                <span><strong>Fattibilità Obiettivo Scritto:</strong> <strong class="text-emerald-400">Obiettivo Raggiungibile!</strong> Dopo le tue spese correnti ti avanzerebbero ancora € 410.00/mese.</span>
+              </li>
+              <li id="sim-ia-reale" class="flex items-start gap-2">
+                <span class="text-sky-400 mt-1">•</span>
+                <span><strong>Mese Scorso:</strong> Hai effettivamente risparmiato il <strong>54.5% (€ 1200.00)</strong>.</span>
+              </li>
+            </ul>
+          </div>
         </div>
-        <button onclick="calcolaSimulazione()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl transition">Calcola Totale</button>
-        <div id="sim-result" class="text-xl font-bold text-center text-emerald-400 pt-2"></div>
       </div>
     </section>
 
@@ -201,9 +278,7 @@
                 <th class="pb-3 text-center">Azione</th>
               </tr>
             </thead>
-            <tbody id="table-full-body" class="divide-y divide-slate-800/60 text-sm">
-              <!-- Righe dinamiche con tasto elimina -->
-            </tbody>
+            <tbody id="table-full-body" class="divide-y divide-slate-800/60 text-sm"></tbody>
           </table>
         </div>
       </div>
@@ -263,7 +338,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGICA APPLICAZIONE -->
+  <!-- SCRIPT APPLICAZIONE E SIMULATORE -->
   <script>
     let state = {
       netto: parseFloat(localStorage.getItem('rick_netto')) || 0,
@@ -293,6 +368,48 @@
       if (window.innerWidth < 768) toggleSidebar();
     }
 
+    /* SIMULATORE CALCOLI INTERATTIVI */
+    function syncFromPct() {
+      const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
+      const pct = parseFloat(document.getElementById('sim-pct').value) || 0;
+      const target = (salary * pct) / 100;
+      document.getElementById('sim-target').value = target.toFixed(0);
+      updateSimulation();
+    }
+
+    function syncFromAmount() {
+      const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
+      const target = parseFloat(document.getElementById('sim-target').value) || 0;
+      const pct = salary > 0 ? (target / salary) * 100 : 0;
+      document.getElementById('sim-pct').value = pct.toFixed(1);
+      updateSimulation();
+    }
+
+    function updateSimulation() {
+      const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
+      const target = parseFloat(document.getElementById('sim-target').value) || 0;
+      const pct = salary > 0 ? ((target / salary) * 100).toFixed(1) : 0;
+      const auto = parseFloat(document.getElementById('sim-auto').value) || 0;
+      const svago = parseFloat(document.getElementById('sim-svago').value) || 0;
+
+      const annuo = target * 12;
+      const autoPct = salary > 0 ? ((auto / salary) * 100).toFixed(1) : 0;
+      const rimanente = salary - target - auto - svago;
+
+      document.getElementById('sim-res-target').innerText = `€ ${target.toFixed(2)}`;
+      document.getElementById('sim-res-target-sub').innerText = `(${pct}% dello stipendio)`;
+      document.getElementById('sim-res-annuo').innerText = `€ ${annuo.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
+
+      document.getElementById('sim-ia-header').innerHTML = `Hai impostato un target di risparmio personalizzato del <strong>${pct}% (€ ${target.toFixed(2)}/mese)</strong>.`;
+      document.getElementById('sim-ia-auto').innerHTML = `<span class="text-sky-400 mt-1">•</span><span><strong>Costi Auto (${autoPct}% dello stipendio):</strong> Assorbono € ${auto.toFixed(2)} al mese.</span>`;
+
+      if (rimanente >= 0) {
+        document.getElementById('sim-ia-fattibilita').innerHTML = `<span class="text-sky-400 mt-1">•</span><span><strong>Fattibilità Obiettivo Scritto:</strong> <strong class="text-emerald-400">Obiettivo Raggiungibile!</strong> Dopo le tue spese correnti ti avanzerebbero ancora € ${rimanente.toFixed(2)}/mese.</span>`;
+      } else {
+        document.getElementById('sim-ia-fattibilita').innerHTML = `<span class="text-sky-400 mt-1">•</span><span><strong>Fattibilità Obiettivo Scritto:</strong> <strong class="text-rose-500">Obiettivo Troppo Alto!</strong> Sei in deficit di € ${Math.abs(rimanente).toFixed(2)}/mese con le spese correnti.</span>`;
+      }
+    }
+
     function render() {
       localStorage.setItem('rick_netto', state.netto);
       localStorage.setItem('rick_txs', JSON.stringify(state.transactions));
@@ -313,6 +430,10 @@
       document.getElementById('display-risparmio').innerText = `${perc}%`;
       document.getElementById('display-risparmiati').innerText = `€ ${risparmiati.toFixed(2)} risparmiati`;
 
+      document.getElementById('sim-res-reale').innerText = `${perc}%`;
+      document.getElementById('sim-res-reale-sub').innerText = `€ ${risparmiati.toFixed(0)} mesi da parte`;
+      document.getElementById('sim-ia-reale').innerHTML = `<span class="text-sky-400 mt-1">•</span><span><strong>Mese Scorso:</strong> Hai effettivamente risparmiato il <strong>${perc}% (€ ${risparmiati.toFixed(2)})</strong>.</span>`;
+
       // Render Tabelle
       const dashBody = document.getElementById('table-dash-body');
       const fullBody = document.getElementById('table-full-body');
@@ -328,17 +449,15 @@
           const colorClass = isPlus ? 'text-emerald-400' : 'text-rose-500';
           const sign = isPlus ? '+' : '-';
 
-          const rowHtml = `
+          dashBody.innerHTML += `
             <tr>
               <td class="py-3 text-slate-300">${t.date}</td>
               <td class="py-3 font-medium">${t.desc}</td>
               <td class="py-3 text-slate-400">${t.cat}</td>
               <td class="py-3 text-right font-bold ${colorClass}">${sign} € ${t.amount.toFixed(2)}</td>
-            </tr>
-          `;
-          dashBody.innerHTML += rowHtml;
+            </tr>`;
 
-          const fullRowHtml = `
+          fullBody.innerHTML += `
             <tr>
               <td class="py-3 text-slate-300">${t.date}</td>
               <td class="py-3 font-medium">${t.desc}</td>
@@ -347,9 +466,7 @@
               <td class="py-3 text-center">
                 <button onclick="deleteTx(${t.id})" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
               </td>
-            </tr>
-          `;
-          fullBody.innerHTML += fullRowHtml;
+            </tr>`;
         });
       }
 
@@ -360,6 +477,8 @@
       } else {
         aiAdvice.innerText = `Ottimo lavoro! Stai risparmiando il ${perc}% delle tue entrate. Mantieni questo ritmo per raggiungere i tuoi obiettivi.`;
       }
+
+      updateSimulation();
     }
 
     function changeNetto() {
@@ -414,13 +533,6 @@
         state.transactions = [];
         render();
       }
-    }
-
-    function calcolaSimulazione() {
-      const amount = parseFloat(document.getElementById('sim-amount').value) || 0;
-      const months = parseInt(document.getElementById('sim-months').value) || 0;
-      const res = amount * months;
-      document.getElementById('sim-result').innerText = `Totale Risparmiato: € ${res.toFixed(2)}`;
     }
 
     // Inizializzazione
