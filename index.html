@@ -39,7 +39,6 @@
         </div>
       </div>
 
-      <!-- Menu Navigazione -->
       <nav class="space-y-2">
         <button onclick="showPage('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400 transition">
           <i class="fa-solid fa-border-all w-5"></i>
@@ -60,9 +59,8 @@
       </nav>
     </div>
 
-    <!-- Footer Sidebar -->
     <div class="space-y-4 pt-6 border-t border-slate-800/80">
-      <button onclick="alert('Database resettato con successo!')" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition">
+      <button onclick="resetData()" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition">
         <i class="fa-solid fa-rotate-left"></i>
         <span>Reset Database</span>
       </button>
@@ -88,7 +86,7 @@
         <i class="fa-solid fa-bars text-xl"></i>
       </button>
       <div class="flex items-center gap-2">
-        <img src="icon.png" class="w-7 h-7 rounded-lg">
+        <img src="icon.png" class="w-7 h-7 rounded-lg object-cover">
         <span class="font-bold text-base">RickFinance</span>
       </div>
       <div class="w-9"></div>
@@ -101,7 +99,7 @@
           <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Panoramica Finanziaria</h1>
           <p class="text-slate-400 text-xs sm:text-sm">Monitora il tuo patrimonio e le entrate</p>
         </div>
-        <button class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-95 flex items-center justify-center gap-2">
+        <button onclick="openModal()" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-95 flex items-center justify-center gap-2">
           <i class="fa-solid fa-plus"></i>
           <span>Nuova Transazione</span>
         </button>
@@ -109,20 +107,53 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
-          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Netto Iniziale</span>
-          <div class="text-2xl font-bold">€ 0,00</div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Netto Iniziale</span>
+            <button onclick="changeNetto()" class="text-sky-400 text-xs hover:underline"><i class="fa-solid fa-pen"></i></button>
+          </div>
+          <div id="display-netto" class="text-2xl font-bold">€ 0,00</div>
+          <span onclick="changeNetto()" class="text-xs text-sky-400 mt-2 inline-block cursor-pointer">Cambia</span>
         </div>
+
         <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
           <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Entrate Totali</span>
-          <div class="text-2xl font-bold text-emerald-400">€ 4.400,00</div>
+          <div id="display-entrate" class="text-2xl font-bold text-emerald-400">€ 0,00</div>
+          <span class="text-xs text-slate-500 mt-1 block">Somma entrate registrate</span>
         </div>
+
         <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
           <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Uscite Totali</span>
-          <div class="text-2xl font-bold text-rose-500">€ 1.590,00</div>
+          <div id="display-uscite" class="text-2xl font-bold text-rose-500">€ 0,00</div>
+          <span class="text-xs text-slate-500 mt-1 block">Somma spese registrate</span>
         </div>
+
         <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
-          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Risparmio Mese</span>
-          <div class="text-2xl font-bold text-emerald-400">54.5%</div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Risparmio Mese</span>
+            <i class="fa-solid fa-arrow-up-right-dots text-emerald-400"></i>
+          </div>
+          <div id="display-risparmio" class="text-2xl font-bold text-emerald-400">0%</div>
+          <span id="display-risparmiati" class="text-xs text-slate-500 mt-1 block">€ 0,00 risparmiati</span>
+        </div>
+      </div>
+
+      <!-- Tabella Movimenti Dashboard -->
+      <div class="bg-[#0b1329] border border-slate-800/80 rounded-2xl p-5">
+        <h2 class="text-lg font-semibold mb-4">Ultimi Movimenti</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[500px]">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase">
+                <th class="pb-3">Data</th>
+                <th class="pb-3">Descrizione</th>
+                <th class="pb-3">Categoria</th>
+                <th class="pb-3 text-right">Importo</th>
+              </tr>
+            </thead>
+            <tbody id="table-dash-body" class="divide-y divide-slate-800/60 text-sm">
+              <!-- Righe dinamiche -->
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -130,63 +161,270 @@
     <!-- SEZIONE 2: SIMULATORE RISPARMIO -->
     <section id="page-simulatore" class="page-content hidden">
       <h1 class="text-2xl sm:text-3xl font-bold mb-2">Simulatore Risparmio</h1>
-      <p class="text-slate-400 text-sm mb-6">Calcola la crescita dei tuoi risparmi nel tempo.</p>
-      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl">
-        <p class="text-slate-300">Qui puoi inserire gli strumenti di simulazione e calcolo risparmio.</p>
+      <p class="text-slate-400 text-sm mb-6">Calcola l'accumulo dei tuoi risparmi nel tempo.</p>
+
+      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl max-w-xl space-y-4">
+        <div>
+          <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Risparmio Mensile (€)</label>
+          <input type="number" id="sim-amount" value="300" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500">
+        </div>
+        <div>
+          <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Mesi di accumulo</label>
+          <input type="number" id="sim-months" value="12" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500">
+        </div>
+        <button onclick="calcolaSimulazione()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl transition">Calcola Totale</button>
+        <div id="sim-result" class="text-xl font-bold text-center text-emerald-400 pt-2"></div>
       </div>
     </section>
 
     <!-- SEZIONE 3: TRANSAZIONI -->
     <section id="page-transazioni" class="page-content hidden">
-      <h1 class="text-2xl sm:text-3xl font-bold mb-2">Storico Transazioni</h1>
-      <p class="text-slate-400 text-sm mb-6">Elenco completo di tutte le tue entrate e uscite.</p>
-      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl">
-        <p class="text-slate-300">Qui compare la tabella completa con tutte le spese registrate.</p>
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold mb-1">Storico Transazioni</h1>
+          <p class="text-slate-400 text-sm">Registro completo dei movimenti.</p>
+        </div>
+        <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded-xl text-sm">
+          + Aggiungi
+        </button>
+      </div>
+
+      <div class="bg-[#0b1329] border border-slate-800/80 rounded-2xl p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[500px]">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase">
+                <th class="pb-3">Data</th>
+                <th class="pb-3">Descrizione</th>
+                <th class="pb-3">Categoria</th>
+                <th class="pb-3 text-right">Importo</th>
+                <th class="pb-3 text-center">Azione</th>
+              </tr>
+            </thead>
+            <tbody id="table-full-body" class="divide-y divide-slate-800/60 text-sm">
+              <!-- Righe dinamiche con tasto elimina -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <!-- SEZIONE 4: CONSULENTE IA -->
     <section id="page-consulente" class="page-content hidden">
       <h1 class="text-2xl sm:text-3xl font-bold mb-2">Consulente IA</h1>
-      <p class="text-slate-400 text-sm mb-6">Ottieni consigli finanziari personalizzati.</p>
-      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl">
-        <p class="text-slate-300">Piattaforma di analisi intelligente dei tuoi dati finanziari.</p>
+      <p class="text-slate-400 text-sm mb-6">Analisi automatica del tuo profilo di spesa.</p>
+      
+      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl max-w-2xl">
+        <div class="flex items-center gap-3 mb-4">
+          <i class="fa-solid fa-robot text-sky-400 text-2xl"></i>
+          <h3 class="font-bold text-lg">Suggerimento del Mese</h3>
+        </div>
+        <p id="ai-advice" class="text-slate-300 leading-relaxed"></p>
       </div>
     </section>
 
   </main>
 
+  <!-- MODALE AGGIUNGI TRANSAZIONE -->
+  <div id="modal-tx" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0b1329] border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-lg">Nuova Transazione</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 font-semibold mb-1">Descrizione</label>
+        <input type="text" id="tx-desc" placeholder="es. Spesa, Stipendio..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo</label>
+        <select id="tx-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+          <option value="entrata">Entrata (+)</option>
+          <option value="uscita">Uscita (-)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 font-semibold mb-1">Importo (€)</label>
+        <input type="number" step="0.01" id="tx-amount" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 font-semibold mb-1">Categoria</label>
+        <input type="text" id="tx-cat" placeholder="es. Alimentari, Svago..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-sm">Annulla</button>
+        <button onclick="saveTransaction()" class="w-1/2 py-2.5 rounded-xl bg-sky-500 text-white font-semibold text-sm">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGICA APPLICAZIONE -->
   <script>
+    let state = {
+      netto: parseFloat(localStorage.getItem('rick_netto')) || 0,
+      transactions: JSON.parse(localStorage.getItem('rick_txs')) || [
+        { id: 1, date: '15/08/2026', desc: 'Stipendio', cat: 'Entrate', amount: 2200, type: 'entrata' },
+        { id: 2, date: '12/08/2026', desc: 'Spesa Supermercato', cat: 'Alimentari', amount: 85, type: 'uscita' }
+      ]
+    };
+
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebar-overlay');
-      sidebar.classList.toggle('-translate-x-full');
-      overlay.classList.toggle('hidden');
+      document.getElementById('sidebar').classList.toggle('-translate-x-full');
+      document.getElementById('sidebar-overlay').classList.toggle('hidden');
     }
 
     function showPage(pageId) {
-      // Nascondi tutte le pagine
       document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
-      
-      // Mostra la pagina selezionata
       document.getElementById('page-' + pageId).classList.remove('hidden');
 
-      // Resetta gli stili dei pulsanti
-      const navIds = ['dashboard', 'simulatore', 'transazioni', 'consulente'];
-      navIds.forEach(id => {
+      const navs = ['dashboard', 'simulatore', 'transazioni', 'consulente'];
+      navs.forEach(id => {
         const btn = document.getElementById('nav-' + id);
         btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition";
       });
 
-      // Applica lo stile attivo al pulsante selezionato
-      const activeBtn = document.getElementById('nav-' + pageId);
-      activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400 transition";
+      document.getElementById('nav-' + pageId).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400 transition";
 
-      // Chiudi la sidebar su mobile se aperta
-      if (window.innerWidth < 768) {
-        toggleSidebar();
+      if (window.innerWidth < 768) toggleSidebar();
+    }
+
+    function render() {
+      localStorage.setItem('rick_netto', state.netto);
+      localStorage.setItem('rick_txs', JSON.stringify(state.transactions));
+
+      document.getElementById('display-netto').innerText = `€ ${state.netto.toFixed(2)}`;
+
+      let entrate = 0, uscite = 0;
+      state.transactions.forEach(t => {
+        if (t.type === 'entrata') entrate += t.amount;
+        else uscite += t.amount;
+      });
+
+      document.getElementById('display-entrate').innerText = `€ ${entrate.toFixed(2)}`;
+      document.getElementById('display-uscite').innerText = `€ ${uscite.toFixed(2)}`;
+
+      const risparmiati = entrate - uscite;
+      const perc = entrate > 0 ? ((risparmiati / entrate) * 100).toFixed(1) : 0;
+      document.getElementById('display-risparmio').innerText = `${perc}%`;
+      document.getElementById('display-risparmiati').innerText = `€ ${risparmiati.toFixed(2)} risparmiati`;
+
+      // Render Tabelle
+      const dashBody = document.getElementById('table-dash-body');
+      const fullBody = document.getElementById('table-full-body');
+      dashBody.innerHTML = '';
+      fullBody.innerHTML = '';
+
+      if (state.transactions.length === 0) {
+        dashBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">Nessuna transazione.</td></tr>`;
+        fullBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Nessuna transazione.</td></tr>`;
+      } else {
+        state.transactions.forEach(t => {
+          const isPlus = t.type === 'entrata';
+          const colorClass = isPlus ? 'text-emerald-400' : 'text-rose-500';
+          const sign = isPlus ? '+' : '-';
+
+          const rowHtml = `
+            <tr>
+              <td class="py-3 text-slate-300">${t.date}</td>
+              <td class="py-3 font-medium">${t.desc}</td>
+              <td class="py-3 text-slate-400">${t.cat}</td>
+              <td class="py-3 text-right font-bold ${colorClass}">${sign} € ${t.amount.toFixed(2)}</td>
+            </tr>
+          `;
+          dashBody.innerHTML += rowHtml;
+
+          const fullRowHtml = `
+            <tr>
+              <td class="py-3 text-slate-300">${t.date}</td>
+              <td class="py-3 font-medium">${t.desc}</td>
+              <td class="py-3 text-slate-400">${t.cat}</td>
+              <td class="py-3 text-right font-bold ${colorClass}">${sign} € ${t.amount.toFixed(2)}</td>
+              <td class="py-3 text-center">
+                <button onclick="deleteTx(${t.id})" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          `;
+          fullBody.innerHTML += fullRowHtml;
+        });
+      }
+
+      // Advice IA
+      const aiAdvice = document.getElementById('ai-advice');
+      if (uscite > entrate) {
+        aiAdvice.innerText = "Attenzione: le tue uscite superano le entrate inserite questo mese. Riduci le spese discrezionali.";
+      } else {
+        aiAdvice.innerText = `Ottimo lavoro! Stai risparmiando il ${perc}% delle tue entrate. Mantieni questo ritmo per raggiungere i tuoi obiettivi.`;
       }
     }
+
+    function changeNetto() {
+      const val = prompt("Inserisci il nuovo netto iniziale (€):", state.netto);
+      if (val !== null && !isNaN(val)) {
+        state.netto = parseFloat(val);
+        render();
+      }
+    }
+
+    function openModal() { document.getElementById('modal-tx').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('modal-tx').classList.add('hidden'); }
+
+    function saveTransaction() {
+      const desc = document.getElementById('tx-desc').value;
+      const type = document.getElementById('tx-type').value;
+      const amount = parseFloat(document.getElementById('tx-amount').value);
+      const cat = document.getElementById('tx-cat').value || 'Generale';
+
+      if (!desc || isNaN(amount) || amount <= 0) {
+        alert("Inserisci una descrizione e un importo validi.");
+        return;
+      }
+
+      const today = new Date();
+      const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+      state.transactions.unshift({
+        id: Date.now(),
+        date: dateStr,
+        desc: desc,
+        cat: cat,
+        amount: amount,
+        type: type
+      });
+
+      closeModal();
+      document.getElementById('tx-desc').value = '';
+      document.getElementById('tx-amount').value = '';
+      document.getElementById('tx-cat').value = '';
+      render();
+    }
+
+    function deleteTx(id) {
+      state.transactions = state.transactions.filter(t => t.id !== id);
+      render();
+    }
+
+    function resetData() {
+      if (confirm("Sei sicuro di voler resettare il database?")) {
+        state.netto = 0;
+        state.transactions = [];
+        render();
+      }
+    }
+
+    function calcolaSimulazione() {
+      const amount = parseFloat(document.getElementById('sim-amount').value) || 0;
+      const months = parseInt(document.getElementById('sim-months').value) || 0;
+      const res = amount * months;
+      document.getElementById('sim-result').innerText = `Totale Risparmiato: € ${res.toFixed(2)}`;
+    }
+
+    // Inizializzazione
+    render();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
