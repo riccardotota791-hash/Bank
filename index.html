@@ -9,6 +9,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- Chart.js per i Grafici -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- PWA & Icone -->
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -97,7 +100,7 @@
       <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Panoramica Finanziaria</h1>
-          <p class="text-slate-400 text-xs sm:text-sm">Monitora il tuo patrimonio e le entrate</p>
+          <p class="text-slate-400 text-xs sm:text-sm">Monitora il tuo patrimonio, grafici e spese</p>
         </div>
         <button onclick="openModal()" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-95 flex items-center justify-center gap-2">
           <i class="fa-solid fa-plus"></i>
@@ -137,6 +140,32 @@
         </div>
       </div>
 
+      <!-- SEZIONE GRAFICI SPESE -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        <!-- Grafico Entrate vs Uscite Mensili -->
+        <div class="lg:col-span-7 bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+          <h2 class="text-base font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-chart-column text-sky-400"></i>
+            <span>Confronto Mensile (Entrate vs Uscite)</span>
+          </h2>
+          <div class="h-64">
+            <canvas id="chart-monthly"></canvas>
+          </div>
+        </div>
+
+        <!-- Grafico Categorie Spese -->
+        <div class="lg:col-span-5 bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+          <h2 class="text-base font-bold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-sky-400"></i>
+            <span>Ripartizione Spese per Categoria</span>
+          </h2>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chart-categories"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabella Ultimi Movimenti -->
       <div class="bg-[#0b1329] border border-slate-800/80 rounded-2xl p-5">
         <h2 class="text-lg font-semibold mb-4">Ultimi Movimenti</h2>
         <div class="overflow-x-auto">
@@ -155,7 +184,7 @@
       </div>
     </section>
 
-    <!-- SEZIONE 2: SIMULATORE RISPARMIO (ORIGINALE RIPRISTINATO) -->
+    <!-- SEZIONE 2: SIMULATORE RISPARMIO -->
     <section id="page-simulatore" class="page-content hidden">
       <header class="mb-6">
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-3">
@@ -166,7 +195,6 @@
       </header>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Pannello di Sinistra: Form Dati e Obiettivi -->
         <div class="lg:col-span-4 bg-[#0b1329] border border-slate-800/80 p-5 sm:p-6 rounded-2xl space-y-5">
           <h2 class="text-lg font-bold border-b border-slate-800/80 pb-3">I Tuoi Dati & Obiettivi</h2>
 
@@ -202,7 +230,6 @@
           </div>
         </div>
 
-        <!-- Pannello di Destra: KPI & Valutazione IA -->
         <div class="lg:col-span-8 space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
@@ -224,7 +251,6 @@
             </div>
           </div>
 
-          <!-- Box Valutazione IA -->
           <div class="bg-[#0b1329] border border-slate-800/80 p-6 rounded-2xl space-y-4">
             <h3 class="font-bold text-lg flex items-center gap-2 text-sky-400">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -310,14 +336,14 @@
 
       <div>
         <label class="block text-xs text-slate-400 font-semibold mb-1">Descrizione</label>
-        <input type="text" id="tx-desc" placeholder="es. Spesa, Stipendio..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+        <input type="text" id="tx-desc" placeholder="es. Spesa Supermercato, Stipendio..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
       </div>
 
       <div>
-        <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo</label>
-        <select id="tx-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
-          <option value="entrata">Entrata (+)</option>
+        <label class="block text-xs text-slate-400 font-semibold mb-1">Tipo Movimento</label>
+        <select id="tx-type" onchange="updateCatOptions()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
           <option value="uscita">Uscita (-)</option>
+          <option value="entrata">Entrata (+)</option>
         </select>
       </div>
 
@@ -328,7 +354,14 @@
 
       <div>
         <label class="block text-xs text-slate-400 font-semibold mb-1">Categoria</label>
-        <input type="text" id="tx-cat" placeholder="es. Alimentari, Svago..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+        <select id="tx-cat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
+          <!-- Popolato via JS -->
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 font-semibold mb-1">Data</label>
+        <input type="date" id="tx-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-sky-500">
       </div>
 
       <div class="flex gap-3 pt-2">
@@ -338,15 +371,35 @@
     </div>
   </div>
 
-  <!-- SCRIPT APPLICAZIONE E SIMULATORE -->
+  <!-- SCRIPT APPLICAZIONE, GRAFICI E LOGICA -->
   <script>
+    let monthlyChart = null;
+    let categoryChart = null;
+
     let state = {
       netto: parseFloat(localStorage.getItem('rick_netto')) || 0,
       transactions: JSON.parse(localStorage.getItem('rick_txs')) || [
-        { id: 1, date: '15/08/2026', desc: 'Stipendio', cat: 'Entrate', amount: 2200, type: 'entrata' },
-        { id: 2, date: '12/08/2026', desc: 'Spesa Supermercato', cat: 'Alimentari', amount: 85, type: 'uscita' }
+        { id: 1, date: '2026-08-15', desc: 'Stipendio Agosto', cat: 'Stipendio', amount: 2200, type: 'entrata' },
+        { id: 2, date: '2026-08-12', desc: 'Spesa Supermercato', cat: 'Alimentari', amount: 85, type: 'uscita' },
+        { id: 3, date: '2026-08-10', desc: 'Benzina Auto', cat: 'Auto & Mobilità', amount: 60, type: 'uscita' },
+        { id: 4, date: '2026-07-28', desc: 'Cena fuori', cat: 'Svago', amount: 45, type: 'uscita' },
+        { id: 5, date: '2026-07-15', desc: 'Stipendio Luglio', cat: 'Stipendio', amount: 2200, type: 'entrata' }
       ]
     };
+
+    const categoriesList = {
+      uscita: ['Alimentari', 'Auto & Mobilità', 'Svago', 'Casa', 'Salute', 'Altro'],
+      entrata: ['Stipendio', 'Investimenti', 'Rimborso', 'Altro']
+    };
+
+    function updateCatOptions() {
+      const type = document.getElementById('tx-type').value;
+      const select = document.getElementById('tx-cat');
+      select.innerHTML = '';
+      categoriesList[type].forEach(cat => {
+        select.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+    }
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('-translate-x-full');
@@ -368,7 +421,6 @@
       if (window.innerWidth < 768) toggleSidebar();
     }
 
-    /* SIMULATORE CALCOLI INTERATTIVI */
     function syncFromPct() {
       const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
       const pct = parseFloat(document.getElementById('sim-pct').value) || 0;
@@ -410,6 +462,74 @@
       }
     }
 
+    function renderCharts() {
+      const monthsMap = {};
+      const catMap = {};
+
+      state.transactions.forEach(t => {
+        const dateObj = new Date(t.date);
+        const monthKey = isNaN(dateObj) ? 'Altro' : dateObj.toLocaleString('it-IT', { month: 'short', year: '2-digit' });
+
+        if (!monthsMap[monthKey]) monthsMap[monthKey] = { entrate: 0, uscite: 0 };
+
+        if (t.type === 'entrata') {
+          monthsMap[monthKey].entrate += t.amount;
+        } else {
+          monthsMap[monthKey].uscite += t.amount;
+          catMap[t.cat] = (catMap[t.cat] || 0) + t.amount;
+        }
+      });
+
+      const monthLabels = Object.keys(monthsMap).reverse();
+      const entrateData = monthLabels.map(m => monthsMap[m].entrate);
+      const usciteData = monthLabels.map(m => monthsMap[m].uscite);
+
+      // Grafico Mensile Bar
+      if (monthlyChart) monthlyChart.destroy();
+      const ctxMonthly = document.getElementById('chart-monthly').getContext('2d');
+      monthlyChart = new Chart(ctxMonthly, {
+        type: 'bar',
+        data: {
+          labels: monthLabels,
+          datasets: [
+            { label: 'Entrate (€)', data: entrateData, backgroundColor: '#34d399', borderRadius: 6 },
+            { label: 'Uscite (€)', data: usciteData, backgroundColor: '#f43f5e', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+
+      // Grafico Categorie Doughnut
+      const catLabels = Object.keys(catMap);
+      const catData = Object.values(catMap);
+
+      if (categoryChart) categoryChart.destroy();
+      const ctxCat = document.getElementById('chart-categories').getContext('2d');
+      categoryChart = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels.length ? catLabels : ['Nessuna spesa'],
+          datasets: [{
+            data: catData.length ? catData : [1],
+            backgroundColor: ['#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#34d399', '#f97316', '#64748b']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
+        }
+      });
+    }
+
     function render() {
       localStorage.setItem('rick_netto', state.netto);
       localStorage.setItem('rick_txs', JSON.stringify(state.transactions));
@@ -448,10 +568,11 @@
           const isPlus = t.type === 'entrata';
           const colorClass = isPlus ? 'text-emerald-400' : 'text-rose-500';
           const sign = isPlus ? '+' : '-';
+          const dateFormatted = t.date ? t.date.split('-').reverse().join('/') : '-';
 
           dashBody.innerHTML += `
             <tr>
-              <td class="py-3 text-slate-300">${t.date}</td>
+              <td class="py-3 text-slate-300">${dateFormatted}</td>
               <td class="py-3 font-medium">${t.desc}</td>
               <td class="py-3 text-slate-400">${t.cat}</td>
               <td class="py-3 text-right font-bold ${colorClass}">${sign} € ${t.amount.toFixed(2)}</td>
@@ -459,7 +580,7 @@
 
           fullBody.innerHTML += `
             <tr>
-              <td class="py-3 text-slate-300">${t.date}</td>
+              <td class="py-3 text-slate-300">${dateFormatted}</td>
               <td class="py-3 font-medium">${t.desc}</td>
               <td class="py-3 text-slate-400">${t.cat}</td>
               <td class="py-3 text-right font-bold ${colorClass}">${sign} € ${t.amount.toFixed(2)}</td>
@@ -479,6 +600,7 @@
       }
 
       updateSimulation();
+      renderCharts();
     }
 
     function changeNetto() {
@@ -489,26 +611,29 @@
       }
     }
 
-    function openModal() { document.getElementById('modal-tx').classList.remove('hidden'); }
+    function openModal() {
+      document.getElementById('tx-date').valueAsDate = new Date();
+      updateCatOptions();
+      document.getElementById('modal-tx').classList.remove('hidden');
+    }
+
     function closeModal() { document.getElementById('modal-tx').classList.add('hidden'); }
 
     function saveTransaction() {
       const desc = document.getElementById('tx-desc').value;
       const type = document.getElementById('tx-type').value;
       const amount = parseFloat(document.getElementById('tx-amount').value);
-      const cat = document.getElementById('tx-cat').value || 'Generale';
+      const cat = document.getElementById('tx-cat').value;
+      const dateVal = document.getElementById('tx-date').value;
 
-      if (!desc || isNaN(amount) || amount <= 0) {
-        alert("Inserisci una descrizione e un importo validi.");
+      if (!desc || isNaN(amount) || amount <= 0 || !dateVal) {
+        alert("Inserisci tutti i dati correttamente.");
         return;
       }
 
-      const today = new Date();
-      const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
-
       state.transactions.unshift({
         id: Date.now(),
-        date: dateStr,
+        date: dateVal,
         desc: desc,
         cat: cat,
         amount: amount,
@@ -518,7 +643,6 @@
       closeModal();
       document.getElementById('tx-desc').value = '';
       document.getElementById('tx-amount').value = '';
-      document.getElementById('tx-cat').value = '';
       render();
     }
 
