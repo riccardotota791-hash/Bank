@@ -1,729 +1,209 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <link rel="icon" type="image/png" href="icon.png">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RickFinance - Gestione Finanziaria</title>
-    
-    <!-- Configurazione Web App (PWA) -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RickFinance">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RickFinance</title>
 
-    <!-- Favicon / Icone -->
-    <link rel="icon" type="image/png" href="Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif">
-    <link rel="apple-touch-icon" href="Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .active-tab {
-            background-color: #1e293b;
-            color: #38bdf8;
-            border-left: 4px solid #38bdf8;
-        }
-    </style>
+  <!-- Icona Browser e App -->
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <!-- Manifest e PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+
+  <style>
+    :root {
+      --bg-dark: #0b1329;
+      --card-bg: #111c3a;
+      --accent-blue: #00a8ff;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --green: #00e676;
+      --red: #ff5252;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .btn-add {
+      background-color: var(--accent-blue);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    /* Grid KPI */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .card-value.green { color: var(--green); }
+    .card-value.red { color: var(--red); }
+
+    /* Sezione Tabelle e Movimenti */
+    .transactions {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.95rem;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Regole Responsive Mobile */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .btn-add {
+        width: 100%;
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      th, td {
+        padding: 10px 8px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans h-screen flex overflow-hidden">
+<body>
 
-    <!-- Sidebar Navigation -->
-    <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between shrink-0">
-        <div>
-            <!-- Branding Sidebar con Logo e Nome -->
-            <div class="p-5 flex items-center space-x-3 border-b border-slate-800">
-                <img src="Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif" alt="RickFinance Logo" class="w-11 h-11 rounded-xl object-cover border border-sky-500/30 shadow-md shadow-sky-500/10">
-                <div>
-                    <h1 class="font-bold text-lg leading-tight text-white tracking-wide">RickFinance</h1>
-                    <p class="text-xs font-medium text-sky-400">Riccardo Tota</p>
-                </div>
-            </div>
+  <div class="container">
+    <header>
+      <h1>Panoramica Finanziaria</h1>
+      <button class="btn-add">+ Nuova Transazione</button>
+    </header>
 
-            <nav class="mt-6 space-y-1">
-                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full flex items-center space-x-3 px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition active-tab">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                    <span>Dashboard</span>
-                </button>
-                <button onclick="switchTab('savings')" id="tab-savings" class="w-full flex items-center space-x-3 px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition">
-                    <i data-lucide="piggy-bank" class="w-5 h-5"></i>
-                    <span>Simulatore Risparmio</span>
-                </button>
-                <button onclick="switchTab('transactions')" id="tab-transactions" class="w-full flex items-center space-x-3 px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition">
-                    <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
-                    <span>Transazioni</span>
-                </button>
-                <button onclick="switchTab('advisor')" id="tab-advisor" class="w-full flex items-center space-x-3 px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition">
-                    <i data-lucide="sparkles" class="w-5 h-5"></i>
-                    <span>Consulente IA</span>
-                </button>
-            </nav>
-        </div>
-
-        <div class="p-4 border-t border-slate-800 space-y-3">
-            <button onclick="resetStorage()" class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs py-2 rounded-xl flex items-center justify-center space-x-2 border border-rose-500/20 transition">
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                <span>Reset Database</span>
-            </button>
-            <div class="flex items-center space-x-3 pt-2">
-                <div class="w-8 h-8 rounded-full bg-sky-600 flex items-center justify-center font-bold text-white text-xs">
-                    RT
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-white">Riccardo Tota</p>
-                    <p class="text-[10px] text-slate-500">Profilo Personale</p>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto bg-slate-900 p-8 relative">
-
-        <!-- DASHBOARD TAB -->
-        <section id="sec-dashboard" class="space-y-6">
-            <header class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Panoramica Finanziaria</h2>
-                    <p class="text-slate-400 text-sm">Monitora patrimonio, entrate e la percentuale di risparmio impostata</p>
-                </div>
-                <button onclick="openModal('trans-modal')" class="bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold px-4 py-2 rounded-xl flex items-center space-x-2 transition shadow-lg shadow-sky-500/20">
-                    <i data-lucide="plus" class="w-5 h-5"></i>
-                    <span>Nuova Transazione</span>
-                </button>
-            </header>
-
-            <!-- Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <!-- Patrimonio Card -->
-                <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-2 relative group hover:border-sky-500/50 transition">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Patrimonio Netto</span>
-                        <button onclick="openNetWorthModal()" class="bg-slate-800 p-1.5 rounded-lg text-slate-300 hover:text-sky-400 hover:bg-slate-700 transition" title="Modifica Patrimonio Base">
-                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                    <p id="card-networth" class="text-2xl font-extrabold text-white">€ 0,00</p>
-                    <div class="flex items-center justify-between text-xs text-slate-500 pt-1">
-                        <span>Base iniziale: <strong id="lbl-base-nw" class="text-slate-300">€ 0,00</strong></span>
-                        <button onclick="openNetWorthModal()" class="text-sky-400 hover:underline">Cambia</button>
-                    </div>
-                </div>
-
-                <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-2">
-                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Entrate Totali</span>
-                    <p id="card-incomes" class="text-2xl font-extrabold text-emerald-400">€ 0,00</p>
-                    <p class="text-xs text-slate-400">Somma entrate registrate</p>
-                </div>
-
-                <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-2">
-                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Uscite Totali</span>
-                    <p id="card-expenses" class="text-2xl font-extrabold text-rose-400">€ 0,00</p>
-                    <p class="text-xs text-slate-400">Somma spese registrate</p>
-                </div>
-
-                <!-- Card Risparmio -->
-                <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-2 border-emerald-500/30">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs uppercase font-bold text-emerald-400 tracking-wider">Risparmio Mese Scorso</span>
-                        <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
-                    </div>
-                    <p id="card-last-month-rate" class="text-2xl font-extrabold text-emerald-400">0.0%</p>
-                    <p id="card-last-month-sub" class="text-xs text-slate-400">€ 0,00 messi da parte</p>
-                </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 bg-slate-950 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="text-lg font-bold text-white mb-4">Evoluzione Patrimonio Netto</h3>
-                    <div class="h-64">
-                        <canvas id="netWorthChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="text-lg font-bold text-white mb-4">Uscite per Categoria</h3>
-                    <div class="h-64 flex justify-center">
-                        <canvas id="expensesChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SIMULATORE RISPARMIO TAB -->
-        <section id="sec-savings" class="space-y-6 hidden">
-            <header>
-                <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
-                    <i data-lucide="piggy-bank" class="w-6 h-6 text-sky-400"></i>
-                    <span>Simulatore & Impostazione Risparmio Personalizzato</span>
-                </h2>
-                <p class="text-slate-400 text-sm">Digita liberamente il tuo obiettivo di risparmio o usalo insieme al calcolo IA.</p>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Inputs Simulazione -->
-                <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-5">
-                    <h3 class="text-lg font-bold text-white border-b border-slate-800 pb-3">I Tuoi Dati & Obiettivi</h3>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Stipendio Mensile Netto (€)</label>
-                        <input type="number" id="sim-salary" value="2200" oninput="calculateSavingsAI()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-sky-500">
-                    </div>
-
-                    <!-- CAMPO DOVE SCRIVERE IL RISPARMIO DESIDERATO -->
-                    <div class="bg-slate-900/80 p-3 rounded-xl border border-sky-500/30 space-y-2">
-                        <label class="block text-xs font-bold text-sky-400">
-                            <i data-lucide="target" class="w-3.5 h-3.5 inline mr-1"></i>
-                            Inserisci Risparmio Desiderato (% o €)
-                        </label>
-                        
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <span class="text-[10px] text-slate-400 block mb-0.5">Quota %</span>
-                                <input type="number" id="sim-target-pct" value="45" min="0" max="100" oninput="syncSavingsFromPct()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-sm text-sky-400 font-bold focus:outline-none focus:border-sky-500">
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-slate-400 block mb-0.5">Importo €/mese</span>
-                                <input type="number" id="sim-target-eur" value="990" oninput="syncSavingsFromEur()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-sm text-emerald-400 font-bold focus:outline-none focus:border-sky-500">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Spese Auto & Mobilità Mensili (€)</label>
-                        <input type="number" id="sim-car-costs" value="350" oninput="calculateSavingsAI()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-sky-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Altre Spese Personali/Svago (€)</label>
-                        <input type="number" id="sim-other-costs" value="450" oninput="calculateSavingsAI()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-sky-500">
-                    </div>
-                </div>
-
-                <!-- Risultati Simulatore -->
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Risparmio Target Scritto</span>
-                            <p id="sim-res-target-monthly" class="text-2xl font-black text-emerald-400 mt-1">€ 0,00</p>
-                            <span id="sim-res-target-pct" class="text-xs text-emerald-500 font-semibold">(0% dello stipendio)</span>
-                        </div>
-                        <div class="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Accumulo Annuo Stimato</span>
-                            <p id="sim-res-target-yearly" class="text-2xl font-black text-sky-400 mt-1">€ 0,00</p>
-                            <span class="text-xs text-slate-500">in 12 mesi al ritmo desiderato</span>
-                        </div>
-                        <div class="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Risparmio Reale Mese Scorso</span>
-                            <p id="sim-res-lastmonth-real" class="text-2xl font-black text-white mt-1">0%</p>
-                            <span id="sim-res-lastmonth-status" class="text-xs text-slate-400">Calcolato dalle transazioni</span>
-                        </div>
-                    </div>
-
-                    <!-- Advice Card IA -->
-                    <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-3">
-                        <h4 class="text-md font-bold text-white flex items-center space-x-2">
-                            <i data-lucide="sparkles" class="w-5 h-5 text-sky-400"></i>
-                            <span>Valutazione IA del Tuo Obiettivo di Risparmio</span>
-                        </h4>
-                        <div id="sim-ai-advice-text" class="text-sm text-slate-300 leading-relaxed space-y-2"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TRANSACTIONS TAB -->
-        <section id="sec-transactions" class="space-y-6 hidden">
-            <header class="flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">Registro Transazioni</h2>
-                <button onclick="openModal('trans-modal')" class="bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold px-4 py-2 rounded-xl flex items-center space-x-2 transition">
-                    <i data-lucide="plus" class="w-5 h-5"></i>
-                    <span>Nuova Transazione</span>
-                </button>
-            </header>
-
-            <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900 border-b border-slate-800 text-xs uppercase text-slate-400">
-                        <tr>
-                            <th class="px-6 py-4">Data</th>
-                            <th class="px-6 py-4">Descrizione</th>
-                            <th class="px-6 py-4">Categoria</th>
-                            <th class="px-6 py-4 text-right">Importo</th>
-                            <th class="px-6 py-4 text-center">Azione</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-800/50" id="transactions-list"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- ADVISOR TAB -->
-        <section id="sec-advisor" class="space-y-6 hidden">
-            <header>
-                <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
-                    <i data-lucide="sparkles" class="w-6 h-6 text-sky-400"></i>
-                    <span>Consulente Finanziario IA</span>
-                </h2>
-            </header>
-
-            <div class="bg-slate-950 rounded-2xl border border-slate-800 flex flex-col h-[550px]">
-                <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4"></div>
-                <div class="p-4 border-t border-slate-800 flex space-x-2">
-                    <input type="text" id="chat-input" placeholder="Chiedi un parere sul tuo risparmio scritto..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                    <button onclick="sendMessage()" class="bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold px-4 py-2 rounded-xl transition">
-                        <i data-lucide="send" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Modal Transazione -->
-    <div id="trans-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-bold text-white">Nuova Transazione</h3>
-                <button onclick="closeModal('trans-modal')" class="text-slate-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <form id="trans-form" class="space-y-4" onsubmit="handleAddTransaction(event)">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Data</label>
-                    <input type="date" id="input-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Descrizione</label>
-                    <input type="text" id="input-desc" required placeholder="Es. Carburante Auto, Stipendio" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
-                        <select id="input-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                            <option value="expense">Uscita (-)</option>
-                            <option value="income">Entrata (+)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Importo (€)</label>
-                        <input type="number" step="0.01" id="input-amount" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Categoria</label>
-                    <select id="input-cat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                        <option value="Auto & Mobilità">Auto & Mobilità</option>
-                        <option value="Ristoranti & Svago">Ristoranti & Svago</option>
-                        <option value="Spesa & Generi Alimentari">Spesa & Generi Alimentari</option>
-                        <option value="Abbonamenti">Abbonamenti</option>
-                        <option value="Stipendio">Stipendio</option>
-                    </select>
-                </div>
-                <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold py-2 rounded-xl transition">
-                    Salva Transazione
-                </button>
-            </form>
-        </div>
+    <div class="kpi-grid">
+      <div class="card">
+        <div class="card-title">Netto Iniziale</div>
+        <div class="card-value">€ 0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Entrate Totali</div>
+        <div class="card-value green">€ 4.400,00</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Uscite Totali</div>
+        <div class="card-value red">€ 1.590,00</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Risparmio Mese</div>
+        <div class="card-value green">54.5%</div>
+      </div>
     </div>
 
-    <!-- Modal Modifica Patrimonio Iniziale -->
-    <div id="nw-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-bold text-white">Imposta Patrimonio Iniziale</h3>
-                <button onclick="closeModal('nw-modal')" class="text-slate-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <p class="text-xs text-slate-400">Inserisci la tua liquidità iniziale di partenza.</p>
-            <form id="nw-form" class="space-y-4" onsubmit="handleSaveNetWorth(event)">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Patrimonio Base (€)</label>
-                    <input type="number" step="0.01" id="input-nw" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-2xl font-bold text-sky-400 focus:outline-none focus:border-sky-500">
-                </div>
-                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold py-2 rounded-xl transition">
-                    Aggiorna Saldo
-                </button>
-            </form>
-        </div>
+    <div class="transactions">
+      <div class="card-title" style="margin-bottom: 16px;">Ultimi Movimenti</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Descrizione</th>
+            <th>Categoria</th>
+            <th>Importo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>15/08/2026</td>
+            <td>Stipendio</td>
+            <td>Entrate</td>
+            <td class="green">+ € 2.200,00</td>
+          </tr>
+          <tr>
+            <td>12/08/2026</td>
+            <td>Spesa Supermercato</td>
+            <td>Alimentari</td>
+            <td class="red">- € 85,00</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+  </div>
 
-    <!-- Application Script -->
-    <script>
-        lucide.createIcons();
-
-        // Registrazione del Service Worker per supporto WebApp
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registrato con successo:', reg))
-                    .catch(err => console.error('Errore registrazione Service Worker:', err));
-            });
-        }
-
-        const DEFAULT_TRANSACTIONS = [
-            { id: 101, date: '2026-07-01', desc: 'Stipendio Luglio', cat: 'Stipendio', type: 'income', amount: 2200.00 },
-            { id: 102, date: '2026-07-05', desc: 'Assicurazione Auto & Carburante', cat: 'Auto & Mobilità', type: 'expense', amount: 320.00 },
-            { id: 103, date: '2026-07-12', desc: 'Spese Personali & Uscite', cat: 'Ristoranti & Svago', type: 'expense', amount: 480.00 },
-            { id: 104, date: '2026-07-20', desc: 'Supermercato', cat: 'Spesa & Generi Alimentari', type: 'expense', amount: 200.00 },
-            
-            { id: 201, date: '2026-08-01', desc: 'Stipendio Agosto', cat: 'Stipendio', type: 'income', amount: 2200.00 },
-            { id: 202, date: '2026-08-04', desc: 'Tagliando e Carburante Auto', cat: 'Auto & Mobilità', type: 'expense', amount: 280.00 },
-            { id: 203, date: '2026-08-10', desc: 'Cene e Svago Estivo', cat: 'Ristoranti & Svago', type: 'expense', amount: 310.00 }
-        ];
-
-        let baseNetWorth = 25000;
-        let transactions = [];
-        let chatHistory = [];
-        let netWorthChart = null;
-        let expensesChart = null;
-
-        function loadData() {
-            const storedNW = localStorage.getItem('fin_base_nw');
-            if (storedNW !== null && !isNaN(parseFloat(storedNW))) {
-                baseNetWorth = parseFloat(storedNW);
-            } else {
-                baseNetWorth = 25000;
-                localStorage.setItem('fin_base_nw', baseNetWorth);
-            }
-
-            const storedTrans = localStorage.getItem('fin_transactions');
-            transactions = storedTrans ? JSON.parse(storedTrans) : DEFAULT_TRANSACTIONS;
-
-            const storedChat = localStorage.getItem('fin_chat');
-            chatHistory = storedChat ? JSON.parse(storedChat) : [{ 
-                sender: 'ai', 
-                text: 'Ciao Riccardo! Puoi digitare la percentuale o cifra di risparmio desiderata nel simulatore e io valuterò se è fattibile in base al tuo stipendio e spese auto!' 
-            }];
-
-            if (!storedTrans) saveData();
-            document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
-        }
-
-        function saveData() {
-            localStorage.setItem('fin_base_nw', baseNetWorth.toString());
-            localStorage.setItem('fin_transactions', JSON.stringify(transactions));
-            localStorage.setItem('fin_chat', JSON.stringify(chatHistory));
-            renderAll();
-        }
-
-        function resetStorage() {
-            if (confirm("Ripristinare il database, le transazioni e il patrimonio iniziale?")) {
-                localStorage.clear();
-                loadData();
-                renderAll();
-            }
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-tab'));
-
-            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabId}`).classList.add('active-tab');
-
-            if (tabId === 'dashboard') {
-                renderCharts();
-            }
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        function syncSavingsFromPct() {
-            const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
-            const pct = parseFloat(document.getElementById('sim-target-pct').value) || 0;
-            const eur = (salary * pct) / 100;
-            document.getElementById('sim-target-eur').value = eur.toFixed(2);
-            calculateSavingsAI();
-        }
-
-        function syncSavingsFromEur() {
-            const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
-            const eur = parseFloat(document.getElementById('sim-target-eur').value) || 0;
-            const pct = salary > 0 ? (eur / salary) * 100 : 0;
-            document.getElementById('sim-target-pct').value = pct.toFixed(1);
-            calculateSavingsAI();
-        }
-
-        function openNetWorthModal() {
-            document.getElementById('input-nw').value = baseNetWorth;
-            openModal('nw-modal');
-        }
-
-        function handleSaveNetWorth(e) {
-            e.preventDefault();
-            const val = parseFloat(document.getElementById('input-nw').value);
-            if (!isNaN(val)) {
-                baseNetWorth = val;
-                saveData();
-                closeModal('nw-modal');
-            }
-        }
-
-        function handleAddTransaction(e) {
-            e.preventDefault();
-            const date = document.getElementById('input-date').value;
-            const desc = document.getElementById('input-desc').value;
-            const type = document.getElementById('input-type').value;
-            const amount = parseFloat(document.getElementById('input-amount').value);
-            const cat = document.getElementById('input-cat').value;
-
-            if (!desc || isNaN(amount) || !date) return;
-
-            transactions.unshift({
-                id: Date.now(),
-                date,
-                desc,
-                type,
-                cat,
-                amount: Math.abs(amount)
-            });
-
-            saveData();
-            closeModal('trans-modal');
-            document.getElementById('trans-form').reset();
-            document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
-        }
-
-        function deleteTransaction(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            saveData();
-        }
-
-        function calculateLastMonthSavings() {
-            const now = new Date();
-            let lastMonth = now.getMonth(); 
-            let year = now.getFullYear();
-            if (lastMonth === 0) {
-                lastMonth = 12;
-                year -= 1;
-            }
-
-            let incomeLM = 0;
-            let expenseLM = 0;
-
-            transactions.forEach(t => {
-                const tDate = new Date(t.date);
-                if ((tDate.getMonth() + 1) === lastMonth && tDate.getFullYear() === year) {
-                    if (t.type === 'income') incomeLM += t.amount;
-                    else expenseLM += t.amount;
-                }
-            });
-
-            const savedLM = incomeLM - expenseLM;
-            const rateLM = incomeLM > 0 ? (savedLM / incomeLM) * 100 : 0;
-
-            return { income: incomeLM, expense: expenseLM, saved: savedLM, rate: rateLM };
-        }
-
-        function calculateSavingsAI() {
-            const salary = parseFloat(document.getElementById('sim-salary').value) || 0;
-            const carCosts = parseFloat(document.getElementById('sim-car-costs').value) || 0;
-            const otherCosts = parseFloat(document.getElementById('sim-other-costs').value) || 0;
-
-            const writtenPct = parseFloat(document.getElementById('sim-target-pct').value) || 0;
-            const writtenTargetEur = parseFloat(document.getElementById('sim-target-eur').value) || 0;
-
-            const availableBudget = salary - carCosts - otherCosts;
-            const yearlySavings = writtenTargetEur * 12;
-
-            document.getElementById('sim-res-target-monthly').innerText = `€ ${writtenTargetEur.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
-            document.getElementById('sim-res-target-pct').innerText = `(${writtenPct.toFixed(1)}% dello stipendio)`;
-            document.getElementById('sim-res-target-yearly').innerText = `€ ${yearlySavings.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
-
-            const lm = calculateLastMonthSavings();
-            document.getElementById('sim-res-lastmonth-real').innerText = `${lm.rate.toFixed(1)}%`;
-            document.getElementById('sim-res-lastmonth-status').innerText = `€ ${lm.saved.toLocaleString('it-IT')} messi da parte`;
-
-            let adviceHTML = '';
-            if (salary <= 0) {
-                adviceHTML = '<p class="text-rose-400">Inserisci uno stipendio valido per consentire all\'IA di effettuare il confronto.</p>';
-            } else {
-                const diff = availableBudget - writtenTargetEur;
-                const isFeasible = diff >= 0;
-
-                adviceHTML = `
-                    <p>Hai impostato un target di risparmio personalizzato del <strong>${writtenPct.toFixed(1)}% (€ ${writtenTargetEur.toFixed(2)}/mese)</strong>.</p>
-                    <ul class="list-disc list-inside space-y-1.5 mt-2 text-slate-300">
-                        <li><strong>Costi Auto (${((carCosts/salary)*100).toFixed(1)}% dello stipendio):</strong> Assorbono € ${carCosts.toFixed(2)} al mese.</li>
-                        <li><strong>Fattibilità Obiettivo Scritto:</strong> ${isFeasible 
-                            ? `<span class="text-emerald-400 font-bold">Obiettivo Raggiungibile!</span> Dopo le tue spese correnti ti avanzerebbero ancora € ${diff.toFixed(2)}/mese.` 
-                            : `<span class="text-rose-400 font-bold">Attenzione: Obiettivo troppo alto!</span> Ti mancano € ${Math.abs(diff).toFixed(2)}/mese per coprire le spese.`}
-                        </li>
-                        <li><strong>Mese Scorso:</strong> Hai effettivamente risparmiato il <strong>${lm.rate.toFixed(1)}% (€ ${lm.saved.toFixed(2)})</strong>.</li>
-                    </ul>
-                `;
-            }
-            document.getElementById('sim-ai-advice-text').innerHTML = adviceHTML;
-        }
-
-        function renderAll() {
-            let totalIncome = 0;
-            let totalExpense = 0;
-
-            transactions.forEach(t => {
-                if (t.type === 'income') totalIncome += t.amount;
-                else totalExpense += t.amount;
-            });
-
-            const currentNetWorth = baseNetWorth + totalIncome - totalExpense;
-
-            document.getElementById('card-networth').innerText = `€ ${currentNetWorth.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
-            document.getElementById('lbl-base-nw').innerText = `€ ${baseNetWorth.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
-            document.getElementById('card-incomes').innerText = `€ ${totalIncome.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
-            document.getElementById('card-expenses').innerText = `€ ${totalExpense.toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
-
-            const lm = calculateLastMonthSavings();
-            document.getElementById('card-last-month-rate').innerText = `${lm.rate.toFixed(1)}%`;
-            document.getElementById('card-last-month-sub').innerText = `€ ${lm.saved.toLocaleString('it-IT', {minimumFractionDigits: 2})} risparmiati`;
-
-            renderTransactionsList();
-            calculateSavingsAI();
-            renderCharts();
-            renderChat();
-        }
-
-        function renderTransactionsList() {
-            const listEl = document.getElementById('transactions-list');
-            listEl.innerHTML = '';
-
-            transactions.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-900/50 transition';
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${t.date}</td>
-                    <td class="px-6 py-4 font-medium text-white">${t.desc}</td>
-                    <td class="px-6 py-4"><span class="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-lg">${t.cat}</span></td>
-                    <td class="px-6 py-4 text-right font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">
-                        ${t.type === 'income' ? '+' : '-'}€ ${t.amount.toLocaleString('it-IT', {minimumFractionDigits: 2})}
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <button onclick="deleteTransaction(${t.id})" class="text-slate-500 hover:text-rose-400 transition">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </td>
-                `;
-                listEl.appendChild(tr);
-            });
-            lucide.createIcons();
-        }
-
-        function renderCharts() {
-            const ctx1 = document.getElementById('netWorthChart')?.getContext('2d');
-            if (ctx1) {
-                if (netWorthChart) netWorthChart.destroy();
-                const sorted = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
-                let runningNW = baseNetWorth;
-                const labels = ['Inizio'];
-                const dataPoints = [baseNetWorth];
-
-                sorted.forEach(t => {
-                    labels.push(t.date);
-                    if (t.type === 'income') runningNW += t.amount;
-                    else runningNW -= t.amount;
-                    dataPoints.push(runningNW);
-                });
-
-                netWorthChart = new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'Patrimonio Netto (€)',
-                            data: dataPoints,
-                            borderColor: '#38bdf8',
-                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
-                            y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } }
-                        }
-                    }
-                });
-            }
-
-            const ctx2 = document.getElementById('expensesChart')?.getContext('2d');
-            if (ctx2) {
-                if (expensesChart) expensesChart.destroy();
-                const catTotals = {};
-                transactions.filter(t => t.type === 'expense').forEach(t => {
-                    catTotals[t.cat] = (catTotals[t.cat] || 0) + t.amount;
-                });
-
-                expensesChart = new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(catTotals),
-                        datasets: [{
-                            data: Object.values(catTotals),
-                            backgroundColor: ['#f43f5e', '#06b6d4', '#eab308', '#a855f7', '#10b981']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12 } }
-                        }
-                    }
-                });
-            }
-        }
-
-        function renderChat() {
-            const box = document.getElementById('chat-box');
-            if (!box) return;
-            box.innerHTML = '';
-
-            chatHistory.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = `flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`;
-                div.innerHTML = `
-                    <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === 'user' ? 'bg-sky-500 text-slate-950 font-medium' : 'bg-slate-900 border border-slate-800 text-slate-200'}">
-                        ${msg.text}
-                    </div>
-                `;
-                box.appendChild(div);
-            });
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            chatHistory.push({ sender: 'user', text });
-            input.value = '';
-            renderChat();
-
-            setTimeout(() => {
-                const targetEur = document.getElementById('sim-target-eur').value;
-                const targetPct = document.getElementById('sim-target-pct').value;
-                chatHistory.push({
-                    sender: 'ai',
-                    text: `Ciao Riccardo! Ho analizzato la tua richiesta. Attualmente hai impostato un target del ${targetPct}% (€${targetEur}/mese). Se mantieni questo ritmo, potrai far crescere il tuo patrimonio netto in modo costante nei prossimi mesi!`
-                });
-                saveData();
-            }, 800);
-        }
-
-        window.onload = function() {
-            loadData();
-            renderAll();
-        };
-    </script>
+  <script src="sw.js"></script>
 </body>
 </html>
