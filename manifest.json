@@ -1,21 +1,21 @@
 {
+  "name": "RickFinance",
   "short_name": "RickFinance",
-  "name": "RickFinance - Riccardo Tota",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1329",
+  "theme_color": "#0b1329",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "Gemini_Generated_Image_ftfkw8ftfkw8ftfk.jfif",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "start_url": "./index.html",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "display": "standalone",
-  "orientation": "portrait"
+  ]
 }
