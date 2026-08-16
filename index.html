@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RickFinance</title>
 
-  <!-- Tailwind CSS per la grafica e la reattività mobile -->
+  <!-- Tailwind CSS & FontAwesome Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- PWA e Icone -->
+  <!-- PWA & Icone -->
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="manifest" href="manifest.json">
@@ -16,88 +17,139 @@
 
   <style>
     body {
-      background-color: #0b1329;
+      background-color: #080e1e;
       color: #ffffff;
       -webkit-tap-highlight-color: transparent;
     }
   </style>
 </head>
-<body class="p-3 sm:p-6 min-h-screen">
+<body class="min-h-screen flex flex-col md:flex-row">
 
-  <div class="max-w-7xl mx-auto">
-    <!-- Header Responsive -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+  <!-- OVERLAY MOBILE (chiude il menu quando si clicca fuori) -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
+
+  <!-- SIDEBAR (Visibile fissa su PC, a comparsa/hamburger su Mobile) -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-[#0b1329] border-r border-slate-800/80 p-5 flex flex-col justify-between transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+    <div>
+      <!-- Header Sidebar -->
+      <div class="flex items-center gap-3 mb-8">
+        <img src="icon.png" alt="RickFinance Logo" class="w-10 h-10 rounded-xl shadow-md border border-slate-700/50 object-cover">
+        <div>
+          <h2 class="font-bold text-lg leading-tight">RickFinance</h2>
+          <p class="text-xs text-sky-400 font-medium">Riccardo Tota</p>
+        </div>
+      </div>
+
+      <!-- Menu Navigazione -->
+      <nav class="space-y-2">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400">
+          <i class="fa-solid fa-border-all w-5"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
+          <i class="fa-solid fa-piggy-bank w-5"></i>
+          <span>Simulatore Risparmio</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
+          <i class="fa-solid fa-arrow-right-arrow-left w-5"></i>
+          <span>Transazioni</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
+          <i class="fa-solid fa-wand-magic-sparkles w-5"></i>
+          <span>Consulente IA</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Footer Sidebar: Reset & Profilo -->
+    <div class="space-y-4 pt-6 border-t border-slate-800/80">
+      <button onclick="alert('Database resettato con successo!')" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition">
+        <i class="fa-solid fa-rotate-left"></i>
+        <span>Reset Database</span>
+      </button>
+
+      <div class="flex items-center gap-3 pt-2">
+        <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center font-bold text-sm text-white shadow-md">
+          RT
+        </div>
+        <div>
+          <p class="text-sm font-semibold leading-tight">Riccardo Tota</p>
+          <p class="text-[11px] text-slate-400">Profilo Personale</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENUTO PRINCIPALE -->
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+
+    <!-- Header Mobile con pulsante Menu Hamburger -->
+    <div class="flex md:hidden items-center justify-between mb-6 pb-4 border-b border-slate-800">
+      <button onclick="toggleSidebar()" class="p-2.5 rounded-xl bg-slate-800 text-slate-200 focus:outline-none">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+      <div class="flex items-center gap-2">
+        <img src="icon.png" class="w-7 h-7 rounded-lg">
+        <span class="font-bold text-base">RickFinance</span>
+      </div>
+      <div class="w-9"></div> <!-- Spacer per bilanciare la barra -->
+    </div>
+
+    <!-- Header Sezione -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
       <div>
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Panoramica Finanziaria</h1>
-        <p class="text-slate-400 text-xs sm:text-sm">Gestisci il tuo patrimonio e le transazioni</p>
+        <p class="text-slate-400 text-xs sm:text-sm">Monitora il tuo patrimonio, entrate e la percentuale di risparmio</p>
       </div>
-      <button class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg transition-all active:scale-95 text-center">
-        + Nuova Transazione
+      <button class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-95 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-plus"></i>
+        <span>Nuova Transazione</span>
       </button>
     </header>
 
-    <!-- Griglia KPI: 1 colonna su Mobile, 2 su Tablet, 4 su PC -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
+    <!-- Griglia KPI -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl relative">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-xs uppercase text-slate-400 font-medium">Netto Iniziale</span>
-          <button class="text-sky-400 text-xs hover:underline">Cambia</button>
+          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Netto Iniziale</span>
+          <button class="text-sky-400 text-xs hover:underline"><i class="fa-solid fa-pen"></i></button>
         </div>
-        <div class="text-xl sm:text-2xl font-bold">€ 0,00</div>
+        <div class="text-2xl font-bold">€ 0,00</div>
+        <span class="text-xs text-sky-400 mt-2 inline-block">Cambia</span>
       </div>
 
-      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
-        <span class="text-xs uppercase text-slate-400 font-medium block mb-2">Entrate Totali</span>
-        <div class="text-xl sm:text-2xl font-bold text-emerald-400">€ 4.400,00</div>
-        <span class="text-xs text-slate-500">Somma entrate registrate</span>
+      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+        <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Entrate Totali</span>
+        <div class="text-2xl font-bold text-emerald-400">€ 4.400,00</div>
+        <span class="text-xs text-slate-500 mt-1 block">Somma entrate registrate</span>
       </div>
 
-      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
-        <span class="text-xs uppercase text-slate-400 font-medium block mb-2">Uscite Totali</span>
-        <div class="text-xl sm:text-2xl font-bold text-rose-500">€ 1.590,00</div>
-        <span class="text-xs text-slate-500">Somma spese registrate</span>
+      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+        <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Uscite Totali</span>
+        <div class="text-2xl font-bold text-rose-500">€ 1.590,00</div>
+        <span class="text-xs text-slate-500 mt-1 block">Somma spese registrate</span>
       </div>
 
-      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
-        <span class="text-xs uppercase text-slate-400 font-medium block mb-2">Risparmio Mese Scorso</span>
-        <div class="text-xl sm:text-2xl font-bold text-emerald-400">54.5%</div>
-        <span class="text-xs text-slate-500">€ 1200,00 risparmiati</span>
+      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Risparmio Mese Scorso</span>
+          <i class="fa-solid fa-arrow-up-right-dots text-emerald-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-emerald-400">54.5%</div>
+        <span class="text-xs text-slate-500 mt-1 block">€ 1200,00 risparmiati</span>
       </div>
     </div>
 
-    <!-- Tabella Movimenti con Scorrimento Orizzontale per Mobile -->
-    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5">
-      <h2 class="text-lg font-semibold mb-4">Ultimi Movimenti</h2>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[500px]">
-          <thead>
-            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase">
-              <th class="pb-3">Data</th>
-              <th class="pb-3">Descrizione</th>
-              <th class="pb-3">Categoria</th>
-              <th class="pb-3 text-right">Importo</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800/60 text-sm">
-            <tr>
-              <td class="py-3 text-slate-300">15/08/2026</td>
-              <td class="py-3 font-medium">Stipendio</td>
-              <td class="py-3 text-slate-400">Entrate</td>
-              <td class="py-3 text-right font-bold text-emerald-400">+ € 2.200,00</td>
-            </tr>
-            <tr>
-              <td class="py-3 text-slate-300">12/08/2026</td>
-              <td class="py-3 font-medium">Spesa Supermercato</td>
-              <td class="py-3 text-slate-400">Alimentari</td>
-              <td class="py-3 text-right font-bold text-rose-500">- € 85,00</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  </main>
 
   <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
