@@ -25,13 +25,12 @@
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
-  <!-- OVERLAY MOBILE (chiude il menu quando si clicca fuori) -->
+  <!-- OVERLAY MOBILE -->
   <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
 
-  <!-- SIDEBAR (Visibile fissa su PC, a comparsa/hamburger su Mobile) -->
+  <!-- SIDEBAR -->
   <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-[#0b1329] border-r border-slate-800/80 p-5 flex flex-col justify-between transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
     <div>
-      <!-- Header Sidebar -->
       <div class="flex items-center gap-3 mb-8">
         <img src="icon.png" alt="RickFinance Logo" class="w-10 h-10 rounded-xl shadow-md border border-slate-700/50 object-cover">
         <div>
@@ -42,26 +41,26 @@
 
       <!-- Menu Navigazione -->
       <nav class="space-y-2">
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400">
+        <button onclick="showPage('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400 transition">
           <i class="fa-solid fa-border-all w-5"></i>
           <span>Dashboard</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
+        </button>
+        <button onclick="showPage('simulatore')" id="nav-simulatore" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
           <i class="fa-solid fa-piggy-bank w-5"></i>
           <span>Simulatore Risparmio</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
+        </button>
+        <button onclick="showPage('transazioni')" id="nav-transazioni" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
           <i class="fa-solid fa-arrow-right-arrow-left w-5"></i>
           <span>Transazioni</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
+        </button>
+        <button onclick="showPage('consulente')" id="nav-consulente" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition">
           <i class="fa-solid fa-wand-magic-sparkles w-5"></i>
           <span>Consulente IA</span>
-        </a>
+        </button>
       </nav>
     </div>
 
-    <!-- Footer Sidebar: Reset & Profilo -->
+    <!-- Footer Sidebar -->
     <div class="space-y-4 pt-6 border-t border-slate-800/80">
       <button onclick="alert('Database resettato con successo!')" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition">
         <i class="fa-solid fa-rotate-left"></i>
@@ -83,7 +82,7 @@
   <!-- CONTENUTO PRINCIPALE -->
   <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
 
-    <!-- Header Mobile con pulsante Menu Hamburger -->
+    <!-- Header Mobile -->
     <div class="flex md:hidden items-center justify-between mb-6 pb-4 border-b border-slate-800">
       <button onclick="toggleSidebar()" class="p-2.5 rounded-xl bg-slate-800 text-slate-200 focus:outline-none">
         <i class="fa-solid fa-bars text-xl"></i>
@@ -92,53 +91,68 @@
         <img src="icon.png" class="w-7 h-7 rounded-lg">
         <span class="font-bold text-base">RickFinance</span>
       </div>
-      <div class="w-9"></div> <!-- Spacer per bilanciare la barra -->
+      <div class="w-9"></div>
     </div>
 
-    <!-- Header Sezione -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Panoramica Finanziaria</h1>
-        <p class="text-slate-400 text-xs sm:text-sm">Monitora il tuo patrimonio, entrate e la percentuale di risparmio</p>
-      </div>
-      <button class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-95 flex items-center justify-center gap-2">
-        <i class="fa-solid fa-plus"></i>
-        <span>Nuova Transazione</span>
-      </button>
-    </header>
-
-    <!-- Griglia KPI -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl relative">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Netto Iniziale</span>
-          <button class="text-sky-400 text-xs hover:underline"><i class="fa-solid fa-pen"></i></button>
+    <!-- SEZIONE 1: DASHBOARD -->
+    <section id="page-dashboard" class="page-content">
+      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Panoramica Finanziaria</h1>
+          <p class="text-slate-400 text-xs sm:text-sm">Monitora il tuo patrimonio e le entrate</p>
         </div>
-        <div class="text-2xl font-bold">€ 0,00</div>
-        <span class="text-xs text-sky-400 mt-2 inline-block">Cambia</span>
-      </div>
+        <button class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-95 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-plus"></i>
+          <span>Nuova Transazione</span>
+        </button>
+      </header>
 
-      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
-        <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Entrate Totali</span>
-        <div class="text-2xl font-bold text-emerald-400">€ 4.400,00</div>
-        <span class="text-xs text-slate-500 mt-1 block">Somma entrate registrate</span>
-      </div>
-
-      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
-        <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Uscite Totali</span>
-        <div class="text-2xl font-bold text-rose-500">€ 1.590,00</div>
-        <span class="text-xs text-slate-500 mt-1 block">Somma spese registrate</span>
-      </div>
-
-      <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Risparmio Mese Scorso</span>
-          <i class="fa-solid fa-arrow-up-right-dots text-emerald-400"></i>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Netto Iniziale</span>
+          <div class="text-2xl font-bold">€ 0,00</div>
         </div>
-        <div class="text-2xl font-bold text-emerald-400">54.5%</div>
-        <span class="text-xs text-slate-500 mt-1 block">€ 1200,00 risparmiati</span>
+        <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Entrate Totali</span>
+          <div class="text-2xl font-bold text-emerald-400">€ 4.400,00</div>
+        </div>
+        <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Uscite Totali</span>
+          <div class="text-2xl font-bold text-rose-500">€ 1.590,00</div>
+        </div>
+        <div class="bg-[#0b1329] border border-slate-800/80 p-5 rounded-2xl">
+          <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider block mb-2">Risparmio Mese</span>
+          <div class="text-2xl font-bold text-emerald-400">54.5%</div>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <!-- SEZIONE 2: SIMULATORE RISPARMIO -->
+    <section id="page-simulatore" class="page-content hidden">
+      <h1 class="text-2xl sm:text-3xl font-bold mb-2">Simulatore Risparmio</h1>
+      <p class="text-slate-400 text-sm mb-6">Calcola la crescita dei tuoi risparmi nel tempo.</p>
+      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl">
+        <p class="text-slate-300">Qui puoi inserire gli strumenti di simulazione e calcolo risparmio.</p>
+      </div>
+    </section>
+
+    <!-- SEZIONE 3: TRANSAZIONI -->
+    <section id="page-transazioni" class="page-content hidden">
+      <h1 class="text-2xl sm:text-3xl font-bold mb-2">Storico Transazioni</h1>
+      <p class="text-slate-400 text-sm mb-6">Elenco completo di tutte le tue entrate e uscite.</p>
+      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl">
+        <p class="text-slate-300">Qui compare la tabella completa con tutte le spese registrate.</p>
+      </div>
+    </section>
+
+    <!-- SEZIONE 4: CONSULENTE IA -->
+    <section id="page-consulente" class="page-content hidden">
+      <h1 class="text-2xl sm:text-3xl font-bold mb-2">Consulente IA</h1>
+      <p class="text-slate-400 text-sm mb-6">Ottieni consigli finanziari personalizzati.</p>
+      <div class="bg-[#0b1329] border border-slate-800 p-6 rounded-2xl">
+        <p class="text-slate-300">Piattaforma di analisi intelligente dei tuoi dati finanziari.</p>
+      </div>
+    </section>
 
   </main>
 
@@ -148,6 +162,30 @@
       const overlay = document.getElementById('sidebar-overlay');
       sidebar.classList.toggle('-translate-x-full');
       overlay.classList.toggle('hidden');
+    }
+
+    function showPage(pageId) {
+      // Nascondi tutte le pagine
+      document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+      
+      // Mostra la pagina selezionata
+      document.getElementById('page-' + pageId).classList.remove('hidden');
+
+      // Resetta gli stili dei pulsanti
+      const navIds = ['dashboard', 'simulatore', 'transazioni', 'consulente'];
+      navIds.forEach(id => {
+        const btn = document.getElementById('nav-' + id);
+        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition";
+      });
+
+      // Applica lo stile attivo al pulsante selezionato
+      const activeBtn = document.getElementById('nav-' + pageId);
+      activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-500/10 text-sky-400 font-semibold border-l-4 border-sky-400 transition";
+
+      // Chiudi la sidebar su mobile se aperta
+      if (window.innerWidth < 768) {
+        toggleSidebar();
+      }
     }
 
     if ('serviceWorker' in navigator) {
