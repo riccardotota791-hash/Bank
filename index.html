@@ -5,205 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RickFinance</title>
 
-  <!-- Icona Browser e App -->
+  <!-- Tailwind CSS per la grafica e la reattività mobile -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PWA e Icone -->
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-
-  <!-- Manifest e PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0b1329">
 
   <style>
-    :root {
-      --bg-dark: #0b1329;
-      --card-bg: #111c3a;
-      --accent-blue: #00a8ff;
-      --text-main: #ffffff;
-      --text-muted: #94a3b8;
-      --green: #00e676;
-      --red: #ff5252;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1200px;
-    }
-
-    /* Header */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
-
-    .btn-add {
-      background-color: var(--accent-blue);
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-
-    /* Grid KPI */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 30px;
-    }
-
-    .card {
-      background-color: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .card-title {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 8px;
-    }
-
-    .card-value {
-      font-size: 1.6rem;
-      font-weight: 700;
-    }
-
-    .card-value.green { color: var(--green); }
-    .card-value.red { color: var(--red); }
-
-    /* Sezione Tabelle e Movimenti */
-    .transactions {
-      background-color: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
-    th, td {
-      padding: 14px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.95rem;
-    }
-
-    th {
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    /* Regole Responsive Mobile */
-    @media (max-width: 768px) {
-      body {
-        padding: 12px;
-      }
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .btn-add {
-        width: 100%;
-      }
-      .kpi-grid {
-        grid-template-columns: 1fr;
-      }
-      th, td {
-        padding: 10px 8px;
-        font-size: 0.85rem;
-      }
+      background-color: #0b1329;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
     }
   </style>
 </head>
-<body>
+<body class="p-3 sm:p-6 min-h-screen">
 
-  <div class="container">
-    <header>
-      <h1>Panoramica Finanziaria</h1>
-      <button class="btn-add">+ Nuova Transazione</button>
+  <div class="max-w-7xl mx-auto">
+    <!-- Header Responsive -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Panoramica Finanziaria</h1>
+        <p class="text-slate-400 text-xs sm:text-sm">Gestisci il tuo patrimonio e le transazioni</p>
+      </div>
+      <button class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3 rounded-xl shadow-lg transition-all active:scale-95 text-center">
+        + Nuova Transazione
+      </button>
     </header>
 
-    <div class="kpi-grid">
-      <div class="card">
-        <div class="card-title">Netto Iniziale</div>
-        <div class="card-value">€ 0,00</div>
+    <!-- Griglia KPI: 1 colonna su Mobile, 2 su Tablet, 4 su PC -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs uppercase text-slate-400 font-medium">Netto Iniziale</span>
+          <button class="text-sky-400 text-xs hover:underline">Cambia</button>
+        </div>
+        <div class="text-xl sm:text-2xl font-bold">€ 0,00</div>
       </div>
-      <div class="card">
-        <div class="card-title">Entrate Totali</div>
-        <div class="card-value green">€ 4.400,00</div>
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
+        <span class="text-xs uppercase text-slate-400 font-medium block mb-2">Entrate Totali</span>
+        <div class="text-xl sm:text-2xl font-bold text-emerald-400">€ 4.400,00</div>
+        <span class="text-xs text-slate-500">Somma entrate registrate</span>
       </div>
-      <div class="card">
-        <div class="card-title">Uscite Totali</div>
-        <div class="card-value red">€ 1.590,00</div>
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
+        <span class="text-xs uppercase text-slate-400 font-medium block mb-2">Uscite Totali</span>
+        <div class="text-xl sm:text-2xl font-bold text-rose-500">€ 1.590,00</div>
+        <span class="text-xs text-slate-500">Somma spese registrate</span>
       </div>
-      <div class="card">
-        <div class="card-title">Risparmio Mese</div>
-        <div class="card-value green">54.5%</div>
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl">
+        <span class="text-xs uppercase text-slate-400 font-medium block mb-2">Risparmio Mese Scorso</span>
+        <div class="text-xl sm:text-2xl font-bold text-emerald-400">54.5%</div>
+        <span class="text-xs text-slate-500">€ 1200,00 risparmiati</span>
       </div>
     </div>
 
-    <div class="transactions">
-      <div class="card-title" style="margin-bottom: 16px;">Ultimi Movimenti</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Descrizione</th>
-            <th>Categoria</th>
-            <th>Importo</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>15/08/2026</td>
-            <td>Stipendio</td>
-            <td>Entrate</td>
-            <td class="green">+ € 2.200,00</td>
-          </tr>
-          <tr>
-            <td>12/08/2026</td>
-            <td>Spesa Supermercato</td>
-            <td>Alimentari</td>
-            <td class="red">- € 85,00</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Tabella Movimenti con Scorrimento Orizzontale per Mobile -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5">
+      <h2 class="text-lg font-semibold mb-4">Ultimi Movimenti</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[500px]">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase">
+              <th class="pb-3">Data</th>
+              <th class="pb-3">Descrizione</th>
+              <th class="pb-3">Categoria</th>
+              <th class="pb-3 text-right">Importo</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-sm">
+            <tr>
+              <td class="py-3 text-slate-300">15/08/2026</td>
+              <td class="py-3 font-medium">Stipendio</td>
+              <td class="py-3 text-slate-400">Entrate</td>
+              <td class="py-3 text-right font-bold text-emerald-400">+ € 2.200,00</td>
+            </tr>
+            <tr>
+              <td class="py-3 text-slate-300">12/08/2026</td>
+              <td class="py-3 font-medium">Spesa Supermercato</td>
+              <td class="py-3 text-slate-400">Alimentari</td>
+              <td class="py-3 text-right font-bold text-rose-500">- € 85,00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <script src="sw.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
 </body>
 </html>
