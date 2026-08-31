@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#246AAD"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.riccardotota.risparmiobuffett"
@@ -24,7 +26,10 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png"
       },
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"]
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,7 +44,10 @@
       ]
     ],
     "extra": {
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "d3d40b65-85cb-4451-9fda-a7e3a1a69b98"
+      }
+    },
+    "owner": "riol05x"
   }
 }
