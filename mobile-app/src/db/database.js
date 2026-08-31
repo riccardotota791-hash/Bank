@@ -78,6 +78,62 @@ export async function initDatabase() {
 
   await seedDefaultCategories(db);
   await seedDefaultSettings(db);
+  await migrateExpenseCategories(db);
+}
+
+// Vecchio nome -> nuovo nome per le categorie di uscita rinominate.
+const EXPENSE_CATEGORY_RENAMES = {
+  'Cibo e spesa': 'Spesa alimentare',
+  Svago: 'Svago e tempo libero',
+  Salute: 'Salute e benessere',
+  Formazione: 'Istruzione e crescita personale',
+};
+
+/**
+ * Aggiorna le categorie di uscita di installazioni esistenti al nuovo set
+ * (rinomina quelle equivalenti mantenendo lo storico, unisce "Imprevisti" in
+ * "Altro", aggiunge le categorie mancanti). Idempotente: su un'installazione
+ * già aggiornata o nuova non fa nulla.
+ */
+async function migrateExpenseCategories(db) {
+  for (const [oldName, newName] of Object.entries(EXPENSE_CATEGORY_RENAMES)) {
+    const oldCat = await db.getFirstAsync('SELECT id FROM categories WHERE name = ? AND type = ?', [oldName, 'expense']);
+    if (!oldCat) continue;
+    const newCat = await db.getFirstAsync('SELECT id FROM categories WHERE name = ? AND type = ?', [newName, 'expense']);
+    if (newCat) {
+      await db.runAsync('UPDATE transactions SET category_id = ? WHERE category_id = ?', [newCat.id, oldCat.id]);
+      await db.runAsync('DELETE FROM categories WHERE id = ?', [oldCat.id]);
+    } else {
+      await db.runAsync('UPDATE categories SET name = ? WHERE id = ?', [newName, oldCat.id]);
+    }
+  }
+
+  const imprevisti = await db.getFirstAsync('SELECT id FROM categories WHERE name = ? AND type = ?', ['Imprevisti', 'expense']);
+  if (imprevisti) {
+    const altroDefault = DEFAULT_CATEGORIES.find((c) => c.name === 'Altro' && c.type === 'expense');
+    let altro = await db.getFirstAsync('SELECT id FROM categories WHERE name = ? AND type = ?', ['Altro', 'expense']);
+    if (!altro) {
+      const result = await db.runAsync(
+        'INSERT INTO categories (name, type, icon, color, is_default, monthly_budget) VALUES (?, ?, ?, ?, 1, ?)',
+        [altroDefault.name, altroDefault.type, altroDefault.icon, altroDefault.color, altroDefault.monthly_budget]
+      );
+      altro = { id: result.lastInsertRowId };
+    }
+    await db.runAsync('UPDATE transactions SET category_id = ? WHERE category_id = ?', [altro.id, imprevisti.id]);
+    await db.runAsync('DELETE FROM categories WHERE id = ?', [imprevisti.id]);
+  }
+
+  const existingExpenseNames = new Set(
+    (await db.getAllAsync('SELECT name FROM categories WHERE type = ?', ['expense'])).map((r) => r.name)
+  );
+  for (const cat of DEFAULT_CATEGORIES.filter((c) => c.type === 'expense')) {
+    if (!existingExpenseNames.has(cat.name)) {
+      await db.runAsync(
+        'INSERT INTO categories (name, type, icon, color, is_default, monthly_budget) VALUES (?, ?, ?, ?, 1, ?)',
+        [cat.name, cat.type, cat.icon, cat.color, cat.monthly_budget]
+      );
+    }
+  }
 }
 
 async function seedDefaultCategories(db) {

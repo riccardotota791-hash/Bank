@@ -14,13 +14,15 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Altre entrate', type: 'income', icon: 'wallet-outline', color: '#4EBB82', monthly_budget: null },
 
   // Uscite (mai casa/affitto/mutuo/bollette)
-  { name: 'Cibo e spesa', type: 'expense', icon: 'fast-food-outline', color: '#E08E45', monthly_budget: 250 },
   { name: 'Trasporti', type: 'expense', icon: 'car-outline', color: '#2E86AB', monthly_budget: 100 },
-  { name: 'Svago', type: 'expense', icon: 'game-controller-outline', color: '#8E5FB0', monthly_budget: 120 },
-  { name: 'Abbonamenti', type: 'expense', icon: 'repeat-outline', color: '#C2554F', monthly_budget: 40 },
-  { name: 'Salute', type: 'expense', icon: 'medkit-outline', color: '#D6483F', monthly_budget: 60 },
-  { name: 'Formazione', type: 'expense', icon: 'school-outline', color: '#2E9E9E', monthly_budget: 60 },
-  { name: 'Imprevisti', type: 'expense', icon: 'alert-circle-outline', color: '#C99A2E', monthly_budget: 80 },
+  { name: 'Spesa alimentare', type: 'expense', icon: 'basket-outline', color: '#E08E45', monthly_budget: 250 },
+  { name: 'Ristoranti e bar', type: 'expense', icon: 'restaurant-outline', color: '#C2554F', monthly_budget: 100 },
+  { name: 'Svago e tempo libero', type: 'expense', icon: 'game-controller-outline', color: '#8E5FB0', monthly_budget: 120 },
+  { name: 'Abbonamenti', type: 'expense', icon: 'repeat-outline', color: '#D6483F', monthly_budget: 40 },
+  { name: 'Salute e benessere', type: 'expense', icon: 'medkit-outline', color: '#2E9E9E', monthly_budget: 60 },
+  { name: 'Shopping e abbigliamento', type: 'expense', icon: 'shirt-outline', color: '#4C6EF5', monthly_budget: 80 },
+  { name: 'Istruzione e crescita personale', type: 'expense', icon: 'school-outline', color: '#B5793C', monthly_budget: 60 },
+  { name: 'Regali e donazioni', type: 'expense', icon: 'gift-outline', color: '#D6608F', monthly_budget: 50 },
   { name: 'Altro', type: 'expense', icon: 'ellipsis-horizontal-circle-outline', color: '#6B7280', monthly_budget: null },
 
   // Risparmio / investimenti (allocazione del risparmio già calcolato)
