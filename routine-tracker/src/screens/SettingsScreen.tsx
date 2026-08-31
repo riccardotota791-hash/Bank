@@ -4,6 +4,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
 import { sendTestNotification } from '../notifications/reminders';
 import { useRoutineStore } from '../hooks/RoutineStore';
+import { PILLS_REMINDER_HOUR, PILLS_REMINDER_MINUTE } from '../data/schedule';
 import { colors, fonts, radius, spacing } from '../theme/theme';
 
 export default function SettingsScreen() {
@@ -64,6 +65,14 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
+
+        <View style={styles.divider} />
+
+        <Text style={styles.footnote}>
+          Il modulo Pillole ha un promemoria fisso separato alle{' '}
+          {String(PILLS_REMINDER_HOUR).padStart(2, '0')}:
+          {String(PILLS_REMINDER_MINUTE).padStart(2, '0')}, non modificabile da qui.
+        </Text>
       </View>
 
       <Pressable
@@ -141,6 +150,11 @@ const styles = StyleSheet.create({
   timeSep: {
     color: colors.textSecondary,
     fontWeight: '700',
+  },
+  footnote: {
+    color: colors.textMuted,
+    fontSize: 11,
+    lineHeight: 16,
   },
   testButton: {
     borderWidth: 1,

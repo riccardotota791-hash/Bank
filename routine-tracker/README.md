@@ -1,9 +1,10 @@
 # Uplink Routine
 
 App mobile nativa (React Native + Expo) per monitorare la routine settimanale:
-CCNA, sala pesi, cardio, camminata, inglese e lettura. Tema scuro ispirato ai
-pannelli di stato del networking, dati salvati solo in locale con
-AsyncStorage, notifiche push locali come promemoria giornaliero.
+CCNA, sala pesi, cardio, camminata, acqua, pillole, inglese e lettura. Tema
+scuro ispirato ai pannelli di stato del networking, dati salvati solo in
+locale con AsyncStorage, notifiche push locali come promemoria giornaliero
+(più un promemoria fisso alle 9:00 dedicato alle pillole).
 
 ## Struttura del progetto
 

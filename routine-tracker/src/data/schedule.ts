@@ -7,6 +7,9 @@ export const CCNA_LESSON_HOURS = 3;
 export const CCNA_END_DATE = new Date(2026, 10, 15, 23, 59, 59); // 15 novembre 2026
 export const CCNA_ACTIVE_DAYS: DayKey[] = ['tue', 'thu', 'sat'];
 
+export const PILLS_REMINDER_HOUR = 9;
+export const PILLS_REMINDER_MINUTE = 0;
+
 export const WALKING_GOAL_STEPS = 10000;
 /** Un libro al mese di media lunghezza: usato come riferimento per l'obiettivo di lettura giornaliero. */
 export const READING_BOOK_PAGES = 300;
@@ -64,6 +67,14 @@ export const ACTIVITY_DEFS: Record<ActivityKey, ActivityDef> = {
     days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
     hasNumericInput: false,
   },
+  pills: {
+    key: 'pills',
+    label: 'Pillole',
+    shortLabel: 'PILLOLE',
+    icon: 'medkit-outline',
+    days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+    hasNumericInput: false,
+  },
   english: {
     key: 'english',
     label: 'Inglese',
@@ -89,6 +100,7 @@ export const ACTIVITY_ORDER: ActivityKey[] = [
   'cardio',
   'walking',
   'water',
+  'pills',
   'english',
   'reading',
 ];
