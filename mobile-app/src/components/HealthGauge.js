@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Text as SvgText, TSpan } from 'react-native-svg';
 import { COLORS, FONT, SPACING } from '../constants/theme';
 import { healthLabel } from '../engine/healthScore';
 
@@ -16,35 +16,40 @@ export default function HealthGauge({ score, breakdown }) {
 
   return (
     <View style={styles.container}>
-      <View style={{ width: SIZE, height: SIZE }}>
-        <Svg width={SIZE} height={SIZE}>
-          <Circle
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS_C}
-            stroke={COLORS.border}
-            strokeWidth={STROKE}
-            fill="none"
-          />
-          <Circle
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS_C}
-            stroke={color}
-            strokeWidth={STROKE}
-            strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            fill="none"
-            rotation="-90"
-            origin={`${SIZE / 2}, ${SIZE / 2}`}
-          />
-        </Svg>
-        <View style={styles.centerLabel}>
-          <Text style={styles.scoreText}>{score}</Text>
-          <Text style={styles.scoreMax}>/100</Text>
-        </View>
-      </View>
+      <Svg width={SIZE} height={SIZE}>
+        <Circle
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={RADIUS_C}
+          stroke={COLORS.border}
+          strokeWidth={STROKE}
+          fill="none"
+        />
+        <Circle
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={RADIUS_C}
+          stroke={color}
+          strokeWidth={STROKE}
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          fill="none"
+          rotation="-90"
+          origin={`${SIZE / 2}, ${SIZE / 2}`}
+        />
+        <SvgText
+          x={SIZE / 2}
+          y={SIZE / 2 + 12}
+          fontSize={34}
+          fontWeight="800"
+          fill={COLORS.textPrimary}
+          textAnchor="middle"
+        >
+          {score}
+          <TSpan fontSize={13} fill={COLORS.textMuted}> /100</TSpan>
+        </SvgText>
+      </Svg>
       <Text style={[styles.label, { color }]}>{label}</Text>
       {breakdown ? (
         <View style={styles.breakdownRow}>
@@ -69,23 +74,6 @@ function BreakdownItem({ label, value }) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-  },
-  centerLabel: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 2,
-  },
-  scoreText: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-  },
-  scoreMax: {
-    fontSize: FONT.small,
-    color: COLORS.textMuted,
-    marginTop: 12,
   },
   label: {
     fontSize: FONT.body,

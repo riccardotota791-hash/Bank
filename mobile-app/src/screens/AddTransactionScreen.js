@@ -128,7 +128,6 @@ export default function AddTransactionScreen({ route, navigation }) {
               value={date}
               mode="date"
               display={Platform.OS === 'ios' ? 'inline' : 'default'}
-              maximumDate={new Date()}
               onChange={(event, selected) => {
                 setShowDatePicker(Platform.OS === 'ios');
                 if (selected) setDate(selected);
