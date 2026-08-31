@@ -1,0 +1,109 @@
+name: Build Android APK (EAS)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+      - "claude/personal-finance-app-expo-*"
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/build-android-apk.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install EAS CLI
+        run: npm install --global eas-cli
+
+      - name: Verify Expo token
+        run: |
+          if [ -z "${EXPO_TOKEN}" ]; then
+            echo "::error::Secret EXPO_TOKEN non impostato. Crea un access token su https://expo.dev/settings/access-tokens e aggiungilo come repository secret EXPO_TOKEN."
+            exit 1
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Link/create EAS project
+        run: eas init --non-interactive || eas project:init --non-interactive || true
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Persist EAS project id (if newly created)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- app.json; then
+            git add app.json
+            git commit -m "chore: persist EAS project id [skip ci]"
+            git push
+          else
+            echo "app.json invariato, nessun projectId da salvare."
+          fi
+
+      - name: Build APK on EAS
+        run: eas build --platform android --profile preview --non-interactive --wait --json > eas-build-result.json
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Show build result (debug)
+        if: always()
+        run: cat eas-build-result.json || true
+
+      - name: Extract APK download URL
+        run: |
+          node -e "
+            const fs = require('fs');
+            const raw = fs.readFileSync('eas-build-result.json', 'utf8');
+            const data = JSON.parse(raw);
+            const list = Array.isArray(data) ? data : [data];
+
+            function findBuildUrl(obj) {
+              if (!obj || typeof obj !== 'object') return null;
+              if (typeof obj.buildUrl === 'string') return obj.buildUrl;
+              for (const key of Object.keys(obj)) {
+                const found = findBuildUrl(obj[key]);
+                if (found) return found;
+              }
+              return null;
+            }
+
+            const url = list.map(findBuildUrl).find(Boolean);
+            if (!url) {
+              console.error('Impossibile trovare buildUrl nel risultato EAS:', raw);
+              process.exit(1);
+            }
+            fs.writeFileSync('apk_url.txt', url);
+            console.log('APK URL:', url);
+          "
+
+      - name: Download APK
+        run: curl -L --fail -o risparmio-buffett.apk "$(cat apk_url.txt)"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: risparmio-buffett-apk
+          path: mobile-app/risparmio-buffett.apk
+          retention-days: 30

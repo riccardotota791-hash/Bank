@@ -56,6 +56,40 @@ questa voce, e la soglia di risparmio consigliata è ricalibrata più alta
    default (nessuna voce di casa) e le impostazioni predefinite (soglia di
    risparmio 40%, rendimento atteso 6%).
 
+## Generare un vero APK (senza Expo Go)
+
+L'app è già configurata per essere compilata come APK installabile tramite
+**EAS Build** (il servizio cloud ufficiale di Expo), orchestrato da un
+workflow GitHub Actions incluso nel repo
+(`.github/workflows/build-android-apk.yml`). Serve un account Expo gratuito.
+
+Setup (una tantum):
+
+1. Crea un account gratuito su [expo.dev](https://expo.dev) se non ne hai già uno.
+2. Genera un access token personale su
+   [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens)
+   ("Create token").
+3. Nel repository GitHub, vai su **Settings → Secrets and variables →
+   Actions → New repository secret**, crea un secret chiamato `EXPO_TOKEN`
+   e incolla il token generato al punto 2.
+
+Per compilare l'APK:
+
+1. Vai sulla tab **Actions** del repository.
+2. Seleziona il workflow **"Build Android APK (EAS)"**.
+3. Clicca **"Run workflow"** (oppure fai un push su `mobile-app/**` per farlo
+   partire automaticamente).
+4. Al termine (build su EAS, in genere 10-15 minuti), apri l'esecuzione
+   completata e scarica l'artifact **`risparmio-buffett-apk`**: contiene il
+   file `risparmio-buffett.apk`, pronto da installare su qualsiasi telefono
+   Android (abilita "Origini sconosciute" se richiesto dal sistema).
+
+Il profilo di build usato è `preview` (definito in `eas.json`), che genera
+un `.apk` di distribuzione interna già firmato da EAS con un keystore
+generato automaticamente — non serve creare o gestire certificati a mano.
+Per pubblicare in futuro su Google Play, usa invece il profilo `production`
+(genera un `.aab`): `eas build --platform android --profile production`.
+
 ## Collegamento Gmail (opzionale)
 
 Il modulo si attiva da **Impostazioni → Collega Gmail**. Richiede un tuo
