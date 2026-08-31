@@ -139,10 +139,12 @@ precedente.
   Impostazioni, così il contenuto resta sempre coerente con la routine
   effettiva (es. il modulo CCNA sparisce dal promemoria dopo metà novembre
   2026 o al completamento delle 30 lezioni).
-- **Regola del lunedì**: `getScheduledActivities` in `src/data/schedule.ts`
-  restituisce solo `['reading']` per il lunedì — tutte le altre schermate
-  (Oggi, Settimana, Statistiche) derivano da questa stessa funzione, quindi
-  la regola è applicata in un unico punto.
+- **Regola del lunedì**: ogni modulo in `ACTIVITY_DEFS` (in
+  `src/data/schedule.ts`) elenca i propri giorni attivi; CCNA, sala pesi,
+  cardio e inglese semplicemente non includono il lunedì, mentre camminata,
+  acqua e lettura sono attivi tutti i giorni lunedì incluso.
+  `getScheduledActivities` filtra su questi elenchi, quindi tutte le
+  schermate (Oggi, Settimana, Statistiche) restano coerenti automaticamente.
 - **Dati**: tutto è salvato con `@react-native-async-storage/async-storage`
   sotto chiavi `@uplink-routine/*`. Disinstallare l'app cancella i dati (non
   c'è backup cloud, come richiesto).

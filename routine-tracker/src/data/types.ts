@@ -5,6 +5,7 @@ export type ActivityKey =
   | 'weights'
   | 'cardio'
   | 'walking'
+  | 'water'
   | 'english'
   | 'reading';
 

@@ -56,6 +56,14 @@ export const ACTIVITY_DEFS: Record<ActivityKey, ActivityDef> = {
     hasNumericInput: true,
     unit: 'passi',
   },
+  water: {
+    key: 'water',
+    label: "2 Litri d'Acqua",
+    shortLabel: 'ACQUA',
+    icon: 'water-outline',
+    days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+    hasNumericInput: false,
+  },
   english: {
     key: 'english',
     label: 'Inglese',
@@ -80,10 +88,17 @@ export const ACTIVITY_ORDER: ActivityKey[] = [
   'weights',
   'cardio',
   'walking',
+  'water',
   'english',
   'reading',
 ];
 
+/**
+ * Il lunedì è "giorno libero" dagli impegni strutturati (CCNA, sala pesi,
+ * cardio, inglese): questi non compaiono mai in `ACTIVITY_DEFS[...].days`
+ * per il lunedì. Camminata, acqua e lettura restano invece attive tutti i
+ * giorni, lunedì incluso.
+ */
 export function isRestDay(dayKey: DayKey): boolean {
   return dayKey === 'mon';
 }
@@ -93,19 +108,15 @@ export function isCcnaCourseOver(date: Date): boolean {
 }
 
 /**
- * Attività previste in un dato giorno.
- * Il lunedì è "giorno libero": solo la lettura è prevista, tutto il resto è nascosto.
- * Il CCNA compare solo nei giorni attivi, prima della fine corso e finché restano lezioni.
+ * Attività previste in un dato giorno, derivate dai giorni attivi di ogni
+ * modulo in ACTIVITY_DEFS. Il CCNA compare solo nei giorni attivi, prima
+ * della fine corso e finché restano lezioni.
  */
 export function getScheduledActivities(
   date: Date,
   ccnaCompletedLessons: number
 ): ActivityKey[] {
   const dayKey = getDayKey(date);
-
-  if (isRestDay(dayKey)) {
-    return ['reading'];
-  }
 
   const scheduled: ActivityKey[] = [];
   for (const key of ACTIVITY_ORDER) {

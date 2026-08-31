@@ -46,7 +46,7 @@ export default function TodayScreen() {
       {isRestDay(dayKey) && (
         <View style={styles.restNotice}>
           <Text style={styles.restNoticeText}>
-            LUNEDÌ // GIORNO LIBERO — tutti i moduli sono disattivati tranne la lettura.
+            LUNEDÌ // GIORNO LIBERO — CCNA, sala pesi, cardio e inglese sono disattivati. Restano attivi camminata, acqua e lettura.
           </Text>
         </View>
       )}
