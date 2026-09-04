@@ -21,6 +21,7 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Abbonamenti', type: 'expense', icon: 'repeat-outline', color: '#D6483F', monthly_budget: 40 },
   { name: 'Salute e benessere', type: 'expense', icon: 'medkit-outline', color: '#2E9E9E', monthly_budget: 60 },
   { name: 'Shopping e abbigliamento', type: 'expense', icon: 'shirt-outline', color: '#4C6EF5', monthly_budget: 80 },
+  { name: 'Vinted', type: 'expense', icon: 'pricetag-outline', color: '#7A6FD9', monthly_budget: 40 },
   { name: 'Istruzione e crescita personale', type: 'expense', icon: 'school-outline', color: '#B5793C', monthly_budget: 60 },
   { name: 'Regali e donazioni', type: 'expense', icon: 'gift-outline', color: '#D6608F', monthly_budget: 50 },
   { name: 'Altro', type: 'expense', icon: 'ellipsis-horizontal-circle-outline', color: '#6B7280', monthly_budget: null },

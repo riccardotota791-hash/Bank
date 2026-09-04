@@ -6,7 +6,7 @@ export const ICON_CHOICES = [
   'shirt-outline', 'paw-outline', 'basket-outline', 'barbell-outline',
   'book-outline', 'cafe-outline', 'phone-portrait-outline', 'musical-notes-outline',
   'heart-outline', 'home-outline', 'card-outline', 'people-outline',
-  'restaurant-outline', 'bag-handle-outline',
+  'restaurant-outline', 'bag-handle-outline', 'pricetag-outline',
 ];
 
 export const COLOR_CHOICES = [
@@ -14,5 +14,5 @@ export const COLOR_CHOICES = [
   '#E08E45', '#2E86AB', '#8E5FB0', '#C2554F',
   '#D6483F', '#2E9E9E', '#C99A2E', '#6B7280',
   '#C9A227', '#B8901E', '#A67F19', '#4C6EF5',
-  '#B5793C', '#D6608F',
+  '#B5793C', '#D6608F', '#7A6FD9',
 ];
