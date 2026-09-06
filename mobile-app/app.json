@@ -15,6 +15,12 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d3d40b65-85cb-4451-9fda-a7e3a1a69b98"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.riccardotota.risparmiobuffett"
