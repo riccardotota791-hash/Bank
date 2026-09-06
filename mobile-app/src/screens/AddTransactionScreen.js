@@ -7,10 +7,10 @@ import TypeSegmentedControl from '../components/TypeSegmentedControl';
 import CategoryGrid from '../components/CategoryGrid';
 import { useApp } from '../context/AppContext';
 import { getCategoriesByType, getCategoryById } from '../db/categoriesRepo';
-import { addTransaction, updateTransaction, deleteTransaction, getTransactionById, getCategoryTotalsForMonth } from '../db/transactionsRepo';
+import { addTransaction, updateTransaction, deleteTransaction, getTransactionById, getCategoryTotalsForRange } from '../db/transactionsRepo';
 import { checkBudgetAlert } from '../services/notifications';
 import { COLORS, SPACING, FONT, RADIUS } from '../constants/theme';
-import { formatDateLong, monthKeyOf } from '../utils/formatters';
+import { formatDateLong, financialMonthKeyOf, getFinancialPeriodRange, currentFinancialMonthKey } from '../utils/formatters';
 
 export default function AddTransactionScreen({ route, navigation }) {
   const { refresh, settings } = useApp();
@@ -24,10 +24,11 @@ export default function AddTransactionScreen({ route, navigation }) {
   const [date, setDate] = useState(() => {
     const defaultMonth = route.params?.defaultDate;
     if (!defaultMonth) return new Date();
-    const now = new Date();
-    const [y, m] = defaultMonth.split('-').map(Number);
-    const isCurrentMonth = now.getFullYear() === y && now.getMonth() + 1 === m;
-    return isCurrentMonth ? now : new Date(y, m - 1, 1, 12);
+    const payday = settings?.payday ?? 27;
+    if (defaultMonth === currentFinancialMonthKey(payday)) return new Date();
+    const { start } = getFinancialPeriodRange(defaultMonth, payday);
+    const [y, m, d] = start.split('-').map(Number);
+    return new Date(y, m - 1, d, 12);
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -76,7 +77,8 @@ export default function AddTransactionScreen({ route, navigation }) {
       refresh();
       if (type === 'expense' && categoryId && settings) {
         const category = await getCategoryById(categoryId);
-        const rows = await getCategoryTotalsForMonth(monthKeyOf(dateStr), 'expense');
+        const periodKey = financialMonthKeyOf(dateStr, settings.payday);
+        const rows = await getCategoryTotalsForRange(getFinancialPeriodRange(periodKey, settings.payday), 'expense');
         const row = rows.find((r) => r.category_id === categoryId);
         if (category && row) {
           checkBudgetAlert({ category, monthTotalForCategory: row.total, settings }).catch(() => {});

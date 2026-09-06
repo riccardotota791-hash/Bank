@@ -30,6 +30,11 @@ export default function SettingsScreen({ navigation }) {
     await updateSetting('investment_return_rate', next);
   };
 
+  const handlePaydayChange = async (delta) => {
+    const next = Math.max(1, Math.min(28, settings.payday + delta));
+    await updateSetting('payday', next);
+  };
+
   const handleReset = () => {
     Alert.alert(
       'Azzerare tutti i dati?',
@@ -57,6 +62,14 @@ export default function SettingsScreen({ navigation }) {
 
         <SectionTitle style={{ marginTop: SPACING.lg }}>Strategia di risparmio</SectionTitle>
         <Card>
+          <SettingStepper
+            label="Giorno di accredito stipendio"
+            hint="Il mese finanziario va da questo giorno al giorno precedente del mese dopo"
+            value={`${settings.payday}`}
+            onDecrease={() => handlePaydayChange(-1)}
+            onIncrease={() => handlePaydayChange(1)}
+          />
+          <View style={styles.divider} />
           <SettingStepper
             label="Soglia di risparmio consigliata"
             hint="Ricalibrata più alta (35-50%) perché non hai spese di casa"

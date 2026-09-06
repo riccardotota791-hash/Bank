@@ -4,25 +4,27 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, EmptyState } from '../components/UI';
 import { useApp } from '../context/AppContext';
-import { getAvailableMonths, getMonthlyTotals } from '../db/transactionsRepo';
+import { getAvailableMonths, getTotalsForRange } from '../db/transactionsRepo';
 import { computeSavingsRate } from '../engine/calculations';
 import { COLORS, RADIUS, SPACING, FONT } from '../constants/theme';
-import { monthLabel, formatEuro, currentMonthKey } from '../utils/formatters';
+import { monthLabel, formatEuro, currentFinancialMonthKey, getFinancialPeriodRange } from '../utils/formatters';
 
 export default function HistoryScreen({ navigation }) {
-  const { dataVersion } = useApp();
+  const { dataVersion, settings } = useApp();
   const [months, setMonths] = useState([]);
+  const payday = settings?.payday ?? 27;
 
   const load = useCallback(async () => {
-    let monthKeys = await getAvailableMonths();
-    if (!monthKeys.includes(currentMonthKey())) monthKeys = [currentMonthKey(), ...monthKeys];
+    const currentKey = currentFinancialMonthKey(payday);
+    let monthKeys = await getAvailableMonths(payday);
+    if (!monthKeys.includes(currentKey)) monthKeys = [currentKey, ...monthKeys];
     const data = [];
     for (const key of monthKeys) {
-      const totals = await getMonthlyTotals(key);
+      const totals = await getTotalsForRange(getFinancialPeriodRange(key, payday));
       data.push({ monthKey: key, ...totals, rate: computeSavingsRate(totals.income, totals.expense) });
     }
     setMonths(data);
-  }, []);
+  }, [payday]);
 
   useFocusEffect(
     useCallback(() => {

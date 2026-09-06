@@ -7,15 +7,15 @@ import WhatIfSimulator from '../components/WhatIfSimulator';
 import { useApp } from '../context/AppContext';
 import { getMonthlyReport } from '../services/reportService';
 import { COLORS, SPACING, FONT } from '../constants/theme';
-import { formatEuro, currentMonthKey } from '../utils/formatters';
+import { formatEuro, currentFinancialMonthKey } from '../utils/formatters';
 
 export default function AdviceScreen() {
   const { dataVersion, settings } = useApp();
   const [report, setReport] = useState(null);
 
   const load = useCallback(async () => {
-    setReport(await getMonthlyReport(currentMonthKey()));
-  }, []);
+    setReport(await getMonthlyReport(currentFinancialMonthKey(settings?.payday ?? 27)));
+  }, [settings?.payday]);
 
   useFocusEffect(
     useCallback(() => {

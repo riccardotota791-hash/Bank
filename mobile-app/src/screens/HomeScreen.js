@@ -9,13 +9,12 @@ import AdviceCard from '../components/AdviceCard';
 import TransactionRow from '../components/TransactionRow';
 import { useApp } from '../context/AppContext';
 import { getMonthlyReport } from '../services/reportService';
-import { getRecentTransactions } from '../db/transactionsRepo';
-import { getYearTotals } from '../db/transactionsRepo';
+import { getRecentTransactions, getYearTotals } from '../db/transactionsRepo';
 import { COLORS, SPACING, FONT, RADIUS } from '../constants/theme';
-import { formatEuro, currentMonthKey } from '../utils/formatters';
+import { formatEuro, currentFinancialMonthKey } from '../utils/formatters';
 
 export default function HomeScreen({ navigation }) {
-  const { dataVersion } = useApp();
+  const { dataVersion, settings } = useApp();
   const [report, setReport] = useState(null);
   const [recent, setRecent] = useState([]);
   const [yearTotals, setYearTotals] = useState({ net: 0 });
@@ -23,17 +22,17 @@ export default function HomeScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const monthKey = currentMonthKey();
+    const monthKey = currentFinancialMonthKey(settings?.payday ?? 27);
     const [rep, recentTx, year] = await Promise.all([
       getMonthlyReport(monthKey),
       getRecentTransactions(5),
-      getYearTotals(monthKey.slice(0, 4)),
+      getYearTotals(new Date().getFullYear()),
     ]);
     setReport(rep);
     setRecent(recentTx);
     setYearTotals(year);
     setLoading(false);
-  }, []);
+  }, [settings?.payday]);
 
   useFocusEffect(
     useCallback(() => {

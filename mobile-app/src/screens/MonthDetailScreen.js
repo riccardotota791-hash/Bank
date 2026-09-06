@@ -5,25 +5,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, EmptyState } from '../components/UI';
 import TransactionRow from '../components/TransactionRow';
 import { useApp } from '../context/AppContext';
-import { getTransactionsByMonth, getMonthlyTotals } from '../db/transactionsRepo';
+import { getTransactionsByRange, getTotalsForRange } from '../db/transactionsRepo';
 import { COLORS, SPACING, FONT } from '../constants/theme';
-import { monthLabel, formatEuro } from '../utils/formatters';
+import { monthLabel, formatEuro, getFinancialPeriodRange } from '../utils/formatters';
 
 export default function MonthDetailScreen({ route, navigation }) {
   const { monthKey } = route.params;
-  const { dataVersion } = useApp();
+  const { dataVersion, settings } = useApp();
   const [transactions, setTransactions] = useState([]);
   const [totals, setTotals] = useState({ income: 0, expense: 0, saving: 0, net: 0 });
+  const range = getFinancialPeriodRange(monthKey, settings?.payday ?? 27);
 
   useEffect(() => {
     navigation.setOptions({ title: monthLabel(monthKey) });
   }, [monthKey, navigation]);
 
   const load = useCallback(async () => {
-    const [tx, tot] = await Promise.all([getTransactionsByMonth(monthKey), getMonthlyTotals(monthKey)]);
+    const [tx, tot] = await Promise.all([getTransactionsByRange(range), getTotalsForRange(range)]);
     setTransactions(tx);
     setTotals(tot);
-  }, [monthKey]);
+  }, [range.start, range.end]);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,7 +50,7 @@ export default function MonthDetailScreen({ route, navigation }) {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
-          <EmptyState icon={<Ionicons name="receipt-outline" size={40} color={COLORS.textMuted} />} title="Nessun movimento in questo mese" />
+          <EmptyState icon={<Ionicons name="receipt-outline" size={40} color={COLORS.textMuted} />} title="Nessun movimento in questo periodo" />
         }
       />
     </ScreenContainer>

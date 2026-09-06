@@ -1,4 +1,5 @@
 import { getDb } from './database';
+import { financialMonthKeyOf } from '../utils/formatters';
 
 export async function addTransaction({ amount, type, category_id = null, note = '', date, source = 'manual' }) {
   const db = await getDb();
@@ -31,14 +32,21 @@ export async function getTransactionById(id) {
   );
 }
 
-export async function getTransactionsByMonth(monthKey) {
+/**
+ * Le funzioni che seguono operano su un "periodo finanziario" [range.start,
+ * range.end] (incluso) invece che sul mese di calendario: il periodo è
+ * ancorato al giorno di accredito dello stipendio (impostazione "payday"),
+ * calcolato con getFinancialPeriodRange in utils/formatters.
+ */
+
+export async function getTransactionsByRange(range) {
   const db = await getDb();
   return db.getAllAsync(
     `SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
      FROM transactions t LEFT JOIN categories c ON c.id = t.category_id
-     WHERE substr(t.date, 1, 7) = ?
+     WHERE t.date >= ? AND t.date <= ?
      ORDER BY t.date DESC, t.id DESC`,
-    [monthKey]
+    [range.start, range.end]
   );
 }
 
@@ -52,12 +60,12 @@ export async function getRecentTransactions(limit = 10) {
   );
 }
 
-export async function getMonthlyTotals(monthKey) {
+export async function getTotalsForRange(range) {
   const db = await getDb();
   const rows = await db.getAllAsync(
     `SELECT type, COALESCE(SUM(amount), 0) as total FROM transactions
-     WHERE substr(date, 1, 7) = ? GROUP BY type`,
-    [monthKey]
+     WHERE date >= ? AND date <= ? GROUP BY type`,
+    [range.start, range.end]
   );
   const totals = { income: 0, expense: 0, saving: 0 };
   for (const row of rows) totals[row.type] = row.total;
@@ -65,47 +73,41 @@ export async function getMonthlyTotals(monthKey) {
   return totals;
 }
 
-export async function getMonthlyTotalsRange(monthKeys) {
-  const results = [];
-  for (const monthKey of monthKeys) {
-    const totals = await getMonthlyTotals(monthKey);
-    results.push({ monthKey, ...totals });
-  }
-  return results;
-}
-
-export async function getCategoryTotalsForMonth(monthKey, type = 'expense') {
+export async function getCategoryTotalsForRange(range, type = 'expense') {
   const db = await getDb();
   return db.getAllAsync(
     `SELECT c.id as category_id, c.name, c.icon, c.color, c.monthly_budget,
             COALESCE(SUM(t.amount), 0) as total
      FROM categories c
-     LEFT JOIN transactions t ON t.category_id = c.id AND substr(t.date, 1, 7) = ? AND t.type = ?
+     LEFT JOIN transactions t ON t.category_id = c.id AND t.date >= ? AND t.date <= ? AND t.type = ?
      WHERE c.type = ?
      GROUP BY c.id
      ORDER BY total DESC`,
-    [monthKey, type, type]
+    [range.start, range.end, type, type]
   );
 }
 
-export async function getCategoryAverageOverMonths(categoryId, monthKeys) {
-  if (monthKeys.length === 0) return 0;
+export async function getCategoryAverageOverRanges(categoryId, ranges) {
+  if (ranges.length === 0) return 0;
   const db = await getDb();
-  const placeholders = monthKeys.map(() => '?').join(',');
+  const clauses = ranges.map(() => '(date >= ? AND date <= ?)').join(' OR ');
+  const params = ranges.flatMap((r) => [r.start, r.end]);
   const row = await db.getFirstAsync(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions
-     WHERE category_id = ? AND substr(date, 1, 7) IN (${placeholders})`,
-    [categoryId, ...monthKeys]
+    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE category_id = ? AND (${clauses})`,
+    [categoryId, ...params]
   );
-  return (row?.total || 0) / monthKeys.length;
+  return (row?.total || 0) / ranges.length;
 }
 
-export async function getAvailableMonths() {
+/**
+ * Elenco dei periodi finanziari (chiavi "YYYY-MM") che contengono almeno un
+ * movimento, più recenti prima.
+ */
+export async function getAvailableMonths(payday = 27) {
   const db = await getDb();
-  const rows = await db.getAllAsync(
-    `SELECT DISTINCT substr(date, 1, 7) as monthKey FROM transactions ORDER BY monthKey DESC`
-  );
-  return rows.map((r) => r.monthKey);
+  const rows = await db.getAllAsync('SELECT DISTINCT date FROM transactions');
+  const keys = new Set(rows.map((r) => financialMonthKeyOf(r.date, payday)));
+  return Array.from(keys).sort((a, b) => (a < b ? 1 : -1));
 }
 
 export async function getYearTotals(year) {

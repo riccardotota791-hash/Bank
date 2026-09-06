@@ -7,29 +7,32 @@ import MonthSelector from '../components/MonthSelector';
 import TransactionRow from '../components/TransactionRow';
 import SwipeToConfirmRow from '../components/SwipeToConfirmRow';
 import { useApp } from '../context/AppContext';
-import { getTransactionsByMonth, getMonthlyTotals } from '../db/transactionsRepo';
+import { getTransactionsByRange, getTotalsForRange } from '../db/transactionsRepo';
 import { getPendingImports } from '../db/pendingImportRepo';
 import { confirmImport, rejectImport } from '../services/gmailService';
 import { COLORS, SPACING, FONT } from '../constants/theme';
-import { currentMonthKey, formatEuro } from '../utils/formatters';
+import { currentFinancialMonthKey, getFinancialPeriodRange, formatEuro } from '../utils/formatters';
 
 export default function TransactionsScreen({ navigation }) {
   const { dataVersion, refresh, settings } = useApp();
-  const [monthKey, setMonthKey] = useState(currentMonthKey());
+  const payday = settings?.payday ?? 27;
+  const [monthKey, setMonthKey] = useState(() => currentFinancialMonthKey(payday));
   const [transactions, setTransactions] = useState([]);
   const [totals, setTotals] = useState({ income: 0, expense: 0, saving: 0, net: 0 });
   const [pending, setPending] = useState([]);
 
+  const range = getFinancialPeriodRange(monthKey, payday);
+
   const load = useCallback(async () => {
     const [tx, tot, pend] = await Promise.all([
-      getTransactionsByMonth(monthKey),
-      getMonthlyTotals(monthKey),
+      getTransactionsByRange(range),
+      getTotalsForRange(range),
       settings?.gmailConnected ? getPendingImports() : Promise.resolve([]),
     ]);
     setTransactions(tx);
     setTotals(tot);
     setPending(pend);
-  }, [monthKey, settings?.gmailConnected]);
+  }, [range.start, range.end, settings?.gmailConnected]);
 
   useFocusEffect(
     useCallback(() => {
@@ -52,6 +55,9 @@ export default function TransactionsScreen({ navigation }) {
       <View style={styles.headerBlock}>
         <Text style={styles.title}>Movimenti</Text>
         <MonthSelector monthKey={monthKey} onChange={setMonthKey} />
+        <Text style={styles.periodLabel}>
+          {formatRangeLabel(range)}
+        </Text>
         <View style={styles.totalsRow}>
           <Text style={[styles.totalItem, { color: COLORS.income }]}>+ {formatEuro(totals.income)}</Text>
           <Text style={[styles.totalItem, { color: COLORS.expense }]}>- {formatEuro(totals.expense)}</Text>
@@ -85,7 +91,7 @@ export default function TransactionsScreen({ navigation }) {
           pending.length === 0 ? (
             <EmptyState
               icon={<Ionicons name="receipt-outline" size={40} color={COLORS.textMuted} />}
-              title="Nessun movimento questo mese"
+              title="Nessun movimento questo periodo"
               subtitle="Tocca + per registrare la tua prima entrata o uscita."
             />
           ) : null
@@ -99,6 +105,12 @@ export default function TransactionsScreen({ navigation }) {
   );
 }
 
+function formatRangeLabel(range) {
+  const [, sm, sd] = range.start.split('-');
+  const [, em, ed] = range.end.split('-');
+  return `dal ${sd}/${sm} al ${ed}/${em}`;
+}
+
 const styles = StyleSheet.create({
   headerBlock: {
     paddingHorizontal: SPACING.lg,
@@ -108,6 +120,13 @@ const styles = StyleSheet.create({
     fontSize: FONT.h1,
     fontWeight: '800',
     color: COLORS.textPrimary,
+  },
+  periodLabel: {
+    fontSize: FONT.tiny,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: -4,
+    marginBottom: SPACING.sm,
   },
   totalsRow: {
     flexDirection: 'row',

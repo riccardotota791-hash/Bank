@@ -55,18 +55,42 @@ export function todayISODate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function monthKeyOf(dateStr) {
-  return dateStr.slice(0, 7); // YYYY-MM
-}
-
-export function currentMonthKey() {
-  return monthKeyOf(todayISODate());
-}
-
 export function shiftMonthKey(monthKey, delta) {
   const [year, month] = monthKey.split('-').map(Number);
   const d = new Date(Date.UTC(year, month - 1 + delta, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function toISO(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * "Mese finanziario" ancorato al giorno di accredito dello stipendio: il
+ * periodo [payday del mese M, payday-1 del mese M+1] è etichettato come M+1
+ * (il mese che riceve la maggior parte delle spese finanziate da quello
+ * stipendio). Con payday = 1 coincide con il normale mese di calendario.
+ */
+export function financialMonthKeyOf(dateStr, payday = 27) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const monthKey = `${y}-${String(m).padStart(2, '0')}`;
+  return d >= payday ? shiftMonthKey(monthKey, 1) : monthKey;
+}
+
+export function currentFinancialMonthKey(payday = 27) {
+  return financialMonthKeyOf(todayISODate(), payday);
+}
+
+/**
+ * Intervallo di date [start, end] (incluso) del periodo finanziario
+ * identificato da monthKey, es. monthKey "2026-09" con payday 27 →
+ * 2026-08-27 → 2026-09-26.
+ */
+export function getFinancialPeriodRange(monthKey, payday = 27) {
+  const [year, month] = monthKey.split('-').map(Number);
+  const start = new Date(Date.UTC(year, month - 2, payday));
+  const end = new Date(Date.UTC(year, month - 1, payday - 1));
+  return { start: toISO(start), end: toISO(end) };
 }
 
 export function formatDateIT(dateStr) {

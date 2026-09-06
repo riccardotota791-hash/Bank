@@ -9,7 +9,7 @@ import { useApp } from '../context/AppContext';
 import { getYearlyTrend, getCategoryPieData, getProjectionBasis, getYearSummary } from '../services/reportService';
 import { projectWealth } from '../engine/calculations';
 import { COLORS, SPACING, FONT } from '../constants/theme';
-import { currentMonthKey, formatEuro } from '../utils/formatters';
+import { currentFinancialMonthKey, formatEuro } from '../utils/formatters';
 
 export default function StatisticsScreen() {
   const { dataVersion, settings } = useApp();
@@ -21,12 +21,13 @@ export default function StatisticsScreen() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const monthKey = currentMonthKey();
-    const year = monthKey.slice(0, 4);
+    const payday = settings?.payday ?? 27;
+    const monthKey = currentFinancialMonthKey(payday);
+    const year = new Date().getFullYear();
     const [trendData, pie, basis, ySummary] = await Promise.all([
-      getYearlyTrend(year, monthKey),
-      getCategoryPieData(monthKey),
-      getProjectionBasis(monthKey),
+      getYearlyTrend(year, monthKey, payday),
+      getCategoryPieData(monthKey, payday),
+      getProjectionBasis(monthKey, payday),
       getYearSummary(year),
     ]);
     setTrend(trendData);
@@ -36,7 +37,7 @@ export default function StatisticsScreen() {
     const rate = settings?.investmentReturnRate || 6;
     setProjections(projectWealth(basis.avgMonthly, rate, [1, 5, 10, 20], basis.startingCapital));
     setLoading(false);
-  }, [settings?.investmentReturnRate]);
+  }, [settings?.investmentReturnRate, settings?.payday]);
 
   useFocusEffect(
     useCallback(() => {

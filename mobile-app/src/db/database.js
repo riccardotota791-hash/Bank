@@ -13,6 +13,7 @@ export async function getDb() {
 }
 
 export const DEFAULT_SETTINGS = {
+  payday: '27',
   savings_target_pct: '40',
   investment_return_rate: '6',
   notifications_enabled: 'true',

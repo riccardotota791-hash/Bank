@@ -1,9 +1,15 @@
-import { getMonthlyTotals, getCategoryTotalsForMonth, getCategoryAverageOverMonths, getYearTotals, getAvailableMonths } from '../db/transactionsRepo';
+import {
+  getTotalsForRange,
+  getCategoryTotalsForRange,
+  getCategoryAverageOverRanges,
+  getYearTotals,
+  getAvailableMonths,
+} from '../db/transactionsRepo';
 import { getAllSettings } from '../db/settingsRepo';
 import { computeSavingsRate, compareValues, recommendedSavingsTarget, reinvestmentRate, average } from '../engine/calculations';
 import { computeTargetSavings, detectOverspending, buildAdviceMessages } from '../engine/advice';
 import { computeHealthScore } from '../engine/healthScore';
-import { shiftMonthKey } from '../utils/formatters';
+import { shiftMonthKey, getFinancialPeriodRange } from '../utils/formatters';
 
 function monthKeysBack(monthKey, n) {
   const keys = [];
@@ -13,17 +19,21 @@ function monthKeysBack(monthKey, n) {
 
 export async function getMonthlyReport(monthKey) {
   const settings = await getAllSettings();
+  const payday = settings.payday;
+  const range = getFinancialPeriodRange(monthKey, payday);
   const prevMonthKey = shiftMonthKey(monthKey, -1);
+  const prevRange = getFinancialPeriodRange(prevMonthKey, payday);
 
   const [totals, prevTotals, expenseCategories] = await Promise.all([
-    getMonthlyTotals(monthKey),
-    getMonthlyTotals(prevMonthKey),
-    getCategoryTotalsForMonth(monthKey, 'expense'),
+    getTotalsForRange(range),
+    getTotalsForRange(prevRange),
+    getCategoryTotalsForRange(range, 'expense'),
   ]);
 
   const historyKeys = monthKeysBack(monthKey, 6);
+  const historyRanges = historyKeys.map((key) => getFinancialPeriodRange(key, payday));
   const historyTotals = [];
-  for (const key of historyKeys) historyTotals.push(await getMonthlyTotals(key));
+  for (const r of historyRanges) historyTotals.push(await getTotalsForRange(r));
   const historyRates = historyTotals
     .filter((t) => t.income > 0)
     .map((t) => computeSavingsRate(t.income, t.expense));
@@ -31,7 +41,7 @@ export async function getMonthlyReport(monthKey) {
 
   const categoryStatsWithAverage = [];
   for (const cat of expenseCategories) {
-    const avg = await getCategoryAverageOverMonths(cat.category_id, historyKeys);
+    const avg = await getCategoryAverageOverRanges(cat.category_id, historyRanges);
     categoryStatsWithAverage.push({
       categoryId: cat.category_id,
       name: cat.name,
@@ -75,6 +85,7 @@ export async function getMonthlyReport(monthKey) {
 
   return {
     monthKey,
+    range,
     settings,
     totals,
     prevTotals,
@@ -93,7 +104,7 @@ export async function getMonthlyReport(monthKey) {
   };
 }
 
-export async function getYearlyTrend(year, upToMonthKey) {
+export async function getYearlyTrend(year, upToMonthKey, payday = 27) {
   const months = [];
   for (let m = 1; m <= 12; m++) {
     const key = `${year}-${String(m).padStart(2, '0')}`;
@@ -102,7 +113,7 @@ export async function getYearlyTrend(year, upToMonthKey) {
   }
   const results = [];
   for (const key of months) {
-    const totals = await getMonthlyTotals(key);
+    const totals = await getTotalsForRange(getFinancialPeriodRange(key, payday));
     results.push({ monthKey: key, ...totals, rate: computeSavingsRate(totals.income, totals.expense) });
   }
   return results;
@@ -112,8 +123,8 @@ export async function getYearSummary(year) {
   return getYearTotals(year);
 }
 
-export async function getCategoryPieData(monthKey, type = 'expense') {
-  const rows = await getCategoryTotalsForMonth(monthKey, type);
+export async function getCategoryPieData(monthKey, payday = 27, type = 'expense') {
+  const rows = await getCategoryTotalsForRange(getFinancialPeriodRange(monthKey, payday), type);
   return rows.filter((r) => r.total > 0);
 }
 
@@ -122,15 +133,15 @@ export async function getCategoryPieData(monthKey, type = 'expense') {
  * medio recente (ciò che verrebbe investito con costanza ogni mese) e
  * capitale già accumulato finora (base di partenza della capitalizzazione).
  */
-export async function getProjectionBasis(monthKey) {
+export async function getProjectionBasis(monthKey, payday = 27) {
   const keys = [...monthKeysBack(monthKey, 5), monthKey];
   const nets = [];
-  for (const key of keys) nets.push((await getMonthlyTotals(key)).net);
+  for (const key of keys) nets.push((await getTotalsForRange(getFinancialPeriodRange(key, payday))).net);
   const avgMonthly = Math.max(0, average(nets));
 
-  const allMonths = await getAvailableMonths();
+  const allMonths = await getAvailableMonths(payday);
   let startingCapital = 0;
-  for (const key of allMonths) startingCapital += (await getMonthlyTotals(key)).net;
+  for (const key of allMonths) startingCapital += (await getTotalsForRange(getFinancialPeriodRange(key, payday))).net;
 
   return { avgMonthly, startingCapital: Math.max(0, startingCapital) };
 }

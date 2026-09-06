@@ -28,6 +28,7 @@ export async function setSettings(obj) {
 
 function normalizeSettings(raw) {
   return {
+    payday: Number(raw.payday),
     savingsTargetPct: Number(raw.savings_target_pct),
     investmentReturnRate: Number(raw.investment_return_rate),
     notificationsEnabled: raw.notifications_enabled === 'true',
