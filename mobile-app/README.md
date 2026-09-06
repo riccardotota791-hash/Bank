@@ -93,6 +93,55 @@ generato automaticamente — non serve creare o gestire certificati a mano.
 Per pubblicare in futuro su Google Play, usa invece il profilo `production`
 (genera un `.aab`): `eas build --platform android --profile production`.
 
+## Generare una build iOS
+
+A differenza di Android, **Apple non permette di installare un file
+compilato direttamente su un iPhone reale** senza firma digitale. Ci sono
+due scenari, a seconda che tu abbia o meno un account Apple Developer.
+
+### Senza account Apple Developer — build per il Simulatore iOS
+
+Non richiede nessun account a pagamento, ma il risultato **gira solo nel
+Simulatore iOS di Xcode, quindi serve un Mac** — non è installabile su un
+iPhone fisico. Usa lo stesso `EXPO_TOKEN` già configurato per Android:
+
+1. Vai sulla tab **Actions** del repository.
+2. Seleziona il workflow **"Build iOS Simulator App (EAS)"**.
+3. Clicca **"Run workflow"**.
+4. Al termine scarica l'artifact **`risparmio-buffett-ios-simulator`**
+   (un `.tar.gz` con dentro il file `.app`), trascinalo nella finestra del
+   Simulatore iOS su un Mac con Xcode installato per aprirlo.
+
+### Con account Apple Developer — build installabile su iPhone reale
+
+Per un'app che si installa davvero su un iPhone (tramite TestFlight o
+distribuzione ad-hoc) serve:
+
+1. Un account [Apple Developer Program](https://developer.apple.com/programs/)
+   attivo (99$/anno).
+2. Collegare le credenziali Apple a EAS. Il modo più semplice è farlo una
+   tantum dal tuo computer (richiede risposta interattiva, per questo non è
+   automatizzato nel workflow GitHub Actions):
+   ```bash
+   cd mobile-app
+   npx eas-cli login          # con l'account Expo
+   npx eas-cli credentials    # segui le istruzioni, accedi con l'Apple ID
+   ```
+   EAS genera e salva certificato + provisioning profile sui suoi server:
+   da quel momento anche le build lanciate da GitHub Actions con lo stesso
+   `EXPO_TOKEN` possono usarli.
+3. Compila e distribuisci su TestFlight (consigliato, niente UDID da
+   registrare manualmente):
+   ```bash
+   eas build --platform ios --profile production --non-interactive
+   eas submit --platform ios --latest
+   ```
+   Dopo la prima elaborazione di Apple (di solito pochi minuti/ore), l'app
+   appare nell'app **TestFlight** sul tuo iPhone, pronta da installare.
+   In alternativa, per una build ad-hoc senza TestFlight, usa il profilo
+   `preview-ios-device` (richiede comunque le credenziali del punto 2 e la
+   registrazione del dispositivo con `eas device:create`).
+
 ## Collegamento Gmail (opzionale)
 
 Il modulo si attiva da **Impostazioni → Collega Gmail**. Richiede un tuo
