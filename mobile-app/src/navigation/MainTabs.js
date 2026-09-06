@@ -14,6 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import CategoryManagerScreen from '../screens/CategoryManagerScreen';
 import CategoryEditScreen from '../screens/CategoryEditScreen';
 import GmailSetupScreen from '../screens/GmailSetupScreen';
+import NewsScreen from '../screens/NewsScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -70,6 +71,7 @@ const ICONS = {
   Consigli: 'bulb',
   Storico: 'time',
   Statistiche: 'bar-chart',
+  Notizie: 'newspaper',
   Impostazioni: 'settings',
 };
 
@@ -81,8 +83,9 @@ export default function MainTabs() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: { backgroundColor: COLORS.card, borderTopColor: COLORS.border },
+        tabBarLabelStyle: { fontSize: 9 },
         tabBarIcon: ({ color, size, focused }) => (
-          <Ionicons name={`${ICONS[route.name]}${focused ? '' : '-outline'}`} size={size} color={color} />
+          <Ionicons name={`${ICONS[route.name]}${focused ? '' : '-outline'}`} size={size - 2} color={color} />
         ),
       })}
     >
@@ -91,6 +94,7 @@ export default function MainTabs() {
       <Tab.Screen name="Consigli" component={AdviceScreen} />
       <Tab.Screen name="Storico" component={HistoryStackNavigator} />
       <Tab.Screen name="Statistiche" component={StatisticsScreen} />
+      <Tab.Screen name="Notizie" component={NewsScreen} />
       <Tab.Screen name="Impostazioni" component={SettingsStackNavigator} />
     </Tab.Navigator>
   );

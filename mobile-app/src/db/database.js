@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
+import { EXCEL_IMPORT_SEED } from './seedTransactions';
 
 const DB_NAME = 'finance.db';
 let dbInstance = null;
@@ -79,6 +80,30 @@ export async function initDatabase() {
   await seedDefaultCategories(db);
   await seedDefaultSettings(db);
   await migrateExpenseCategories(db);
+  await seedExcelImportOnce(db);
+}
+
+/**
+ * Importa una tantum i movimenti forniti dall'utente via Excel. Protetto da
+ * un flag in settings così non vengono reinseriti ad ogni avvio.
+ */
+async function seedExcelImportOnce(db) {
+  const flag = await db.getFirstAsync("SELECT value FROM settings WHERE key = 'excel_import_v1_done'");
+  if (flag?.value === 'true') return;
+
+  const categories = await db.getAllAsync('SELECT id, name, type FROM categories');
+  const categoryId = (name, type) => categories.find((c) => c.name === name && c.type === type)?.id ?? null;
+
+  for (const tx of EXCEL_IMPORT_SEED) {
+    await db.runAsync(
+      'INSERT INTO transactions (amount, type, category_id, note, date, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [tx.amount, tx.type, categoryId(tx.category, tx.type), tx.note, tx.date, 'manual', new Date().toISOString()]
+    );
+  }
+
+  await db.runAsync(
+    "INSERT INTO settings (key, value) VALUES ('excel_import_v1_done', 'true') ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  );
 }
 
 // Vecchio nome -> nuovo nome per le categorie di uscita rinominate.

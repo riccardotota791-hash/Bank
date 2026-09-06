@@ -115,7 +115,10 @@ export default function HomeScreen({ navigation }) {
             ) : (
               recent.map((tx, i) => (
                 <View key={tx.id}>
-                  <TransactionRow transaction={tx} />
+                  <TransactionRow
+                    transaction={tx}
+                    onPress={(t) => navigation.navigate('AddTransaction', { transactionId: t.id })}
+                  />
                   {i < recent.length - 1 ? <View style={styles.rowDivider} /> : null}
                 </View>
               ))

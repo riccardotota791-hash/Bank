@@ -28,6 +28,9 @@ questa voce, e la soglia di risparmio consigliata è ricalibrata più alta
   inserimento manuale sempre disponibile come fallback
 - Storage locale con SQLite — nessun account, nessun server, tutto sul
   dispositivo
+- Tab **Notizie**: rassegna quotidiana su finanza mondiale, intelligenza
+  artificiale e Italia da fonti RSS pubbliche (nessuna chiave API richiesta),
+  con cache locale e aggiornamento manuale/pull-to-refresh
 
 ## Stack tecnico
 
