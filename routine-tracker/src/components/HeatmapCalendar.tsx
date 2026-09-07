@@ -43,6 +43,7 @@ export function HeatmapCalendar({
   ccnaCompletedLessons,
   onPrevMonth,
   onNextMonth,
+  onSelectDay,
 }: {
   monthDate: Date;
   records: Record<string, DailyRecord>;
@@ -50,6 +51,7 @@ export function HeatmapCalendar({
   ccnaCompletedLessons: number;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onSelectDay?: (date: Date) => void;
 }) {
   const days = useMemo(
     () => computeMonthHeatmap(records, monthDate, today, ccnaCompletedLessons),
@@ -89,17 +91,20 @@ export function HeatmapCalendar({
           cell === null ? (
             <View key={`blank-${i}`} style={styles.cell} />
           ) : (
-            <View
+            <Pressable
               key={cell.dateKey}
-              style={[
+              disabled={cell.isFuture || !onSelectDay}
+              onPress={() => onSelectDay?.(cell.date)}
+              style={({ pressed }) => [
                 styles.cell,
                 styles.dayCell,
                 { backgroundColor: cellColor(cell.percent) },
                 cell.isFuture && styles.futureCell,
+                pressed && styles.cellPressed,
               ]}
             >
               <Text style={styles.dayNumber}>{cell.date.getDate()}</Text>
-            </View>
+            </Pressable>
           )
         )}
       </View>
@@ -163,6 +168,9 @@ const styles = StyleSheet.create({
   futureCell: {
     borderStyle: 'dashed',
     borderColor: colors.border,
+  },
+  cellPressed: {
+    opacity: 0.6,
   },
   dayNumber: {
     color: colors.textSecondary,

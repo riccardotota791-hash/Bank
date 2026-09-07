@@ -1,5 +1,7 @@
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { HeatmapCalendar } from '../components/HeatmapCalendar';
 import { LedDot } from '../components/LedDot';
 import { ProgressBar } from '../components/ProgressBar';
@@ -27,14 +29,19 @@ import {
 } from '../utils/date';
 
 export default function WeekScreen() {
+  const navigation = useNavigation<any>();
   const { records, ccnaProgress } = useRoutineStore();
   const today = useMemo(() => new Date(), []);
   const days = useMemo(() => lastNDays(today, 7), [today]);
   const [heatmapMonth, setHeatmapMonth] = useState(() => new Date());
 
+  const openDay = (day: Date) => {
+    navigation.navigate('DayDetail', { dateKey: formatDateKey(day) });
+  };
+
   return (
     <ScreenContainer>
-      <SectionHeader title="Mappa di calore" hint="Completamento mensile" />
+      <SectionHeader title="Mappa di calore" hint="Completamento mensile · tocca un giorno per modificarlo" />
       <HeatmapCalendar
         monthDate={heatmapMonth}
         records={records}
@@ -42,9 +49,10 @@ export default function WeekScreen() {
         ccnaCompletedLessons={ccnaProgress}
         onPrevMonth={() => setHeatmapMonth((m) => addMonths(m, -1))}
         onNextMonth={() => setHeatmapMonth((m) => addMonths(m, 1))}
+        onSelectDay={openDay}
       />
 
-      <SectionHeader title="Ultimi 7 giorni" hint="Storico moduli" />
+      <SectionHeader title="Ultimi 7 giorni" hint="Tocca un giorno per modificarlo" />
       {days.map((day) => {
         const dayKey = getDayKey(day);
         const record = records[formatDateKey(day)];
@@ -54,7 +62,15 @@ export default function WeekScreen() {
         const isToday = isSameDay(day, today);
 
         return (
-          <View key={day.toISOString()} style={[styles.card, isToday && styles.cardToday]}>
+          <Pressable
+            key={day.toISOString()}
+            onPress={() => openDay(day)}
+            style={({ pressed }) => [
+              styles.card,
+              isToday && styles.cardToday,
+              pressed && styles.cardPressed,
+            ]}
+          >
             <View style={styles.headerRow}>
               <View>
                 <Text style={styles.dayLabel}>
@@ -62,9 +78,12 @@ export default function WeekScreen() {
                 </Text>
                 <Text style={styles.dateLabel}>{formatShort(day)}</Text>
               </View>
-              <Text style={[styles.percent, rest && styles.percentRest]}>
-                {rest ? '—' : `${percent}%`}
-              </Text>
+              <View style={styles.headerRight}>
+                <Text style={[styles.percent, rest && styles.percentRest]}>
+                  {rest ? '—' : `${percent}%`}
+                </Text>
+                <Ionicons name="chevron-forward-outline" size={16} color={colors.textMuted} />
+              </View>
             </View>
 
             {!rest && <ProgressBar percent={percent} />}
@@ -87,7 +106,7 @@ export default function WeekScreen() {
             </View>
 
             <Text style={styles.doneSummary}>{doneCount}/{scheduled.length} completati</Text>
-          </View>
+          </Pressable>
         );
       })}
     </ScreenContainer>
@@ -106,10 +125,18 @@ const styles = StyleSheet.create({
   cardToday: {
     borderColor: colors.accentDim,
   },
+  cardPressed: {
+    opacity: 0.7,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   dayLabel: {
     ...fonts.body,
