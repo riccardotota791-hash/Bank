@@ -1,6 +1,6 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import { statusFromWaterValue, WATER_GOAL_ML } from '../data/schedule';
+import { statusFromCounterValue, WATER_GOAL_ML } from '../data/schedule';
 import { getAllRecords, getCcnaProgress, setActivityEntry } from '../data/storage';
 import { computeDayCompletion } from '../data/stats';
 import { formatDateKey } from '../utils/date';
@@ -20,7 +20,10 @@ async function addWaterFromWidget(): Promise<void> {
   const records = await getAllRecords();
   const currentValue = records[formatDateKey(today)]?.activities.water?.value ?? 0;
   const nextValue = Math.min(WATER_GOAL_ML * 3, currentValue + 250);
-  await setActivityEntry(today, 'water', { status: statusFromWaterValue(nextValue), value: nextValue });
+  await setActivityEntry(today, 'water', {
+    status: statusFromCounterValue(nextValue, WATER_GOAL_ML),
+    value: nextValue,
+  });
 }
 
 async function addStepsFromWidget(): Promise<void> {

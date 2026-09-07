@@ -45,7 +45,7 @@ export function DayScreen({ date, onBack, onPrevDay, onNextDay, canGoNext }: Day
     dismissCelebration,
     setActivityStatus,
     setActivityValue,
-    addWater,
+    incrementCounter,
     setNote,
     setTemplate,
   } = useRoutineStore();
@@ -167,16 +167,16 @@ export function DayScreen({ date, onBack, onPrevDay, onNextDay, canGoNext }: Day
             );
           }
 
-          if (key === 'water') {
-            const waterValue = entry?.value ?? 0;
+          if (def.kind === 'counter') {
+            const counterValue = entry?.value ?? 0;
             return (
               <ActivityPanel
                 key={key}
                 def={def}
                 entry={entry}
                 onStatusChange={(status) => setActivityStatus(date, key, status)}
-                onQuickAdd={(delta) => addWater(date, delta)}
-                onReset={() => addWater(date, -waterValue)}
+                onQuickAdd={(delta) => incrementCounter(date, key, delta)}
+                onReset={() => incrementCounter(date, key, -counterValue)}
               />
             );
           }

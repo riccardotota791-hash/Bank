@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ActivityDef, WATER_QUICK_ADD_ML } from '../data/schedule';
+import { ActivityDef } from '../data/schedule';
 import { ActivityEntry, ActivityStatus } from '../data/types';
 import { colors, fonts, radius, spacing } from '../theme/theme';
 import { LedDot } from './LedDot';
@@ -95,13 +95,16 @@ export function ActivityPanel({
             </View>
           )}
           <View style={styles.quickAddRow}>
-            {WATER_QUICK_ADD_ML.map((ml) => (
+            {(def.quickAdd ?? [1]).map((qty) => (
               <Pressable
-                key={ml}
+                key={qty}
                 style={({ pressed }) => [styles.quickAddButton, pressed && styles.pressed]}
-                onPress={() => onQuickAdd?.(ml)}
+                onPress={() => onQuickAdd?.(qty)}
               >
-                <Text style={styles.quickAddText}>+{ml}ml</Text>
+                <Text style={styles.quickAddText}>
+                  +{qty}
+                  {def.unit === 'ml' ? 'ml' : ''}
+                </Text>
               </Pressable>
             ))}
             <Pressable

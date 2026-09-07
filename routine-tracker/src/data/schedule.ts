@@ -14,6 +14,8 @@ export const DEFAULT_PILLS_REMINDER_MINUTE = 0;
 export const WALKING_GOAL_STEPS = 10000;
 export const WATER_GOAL_ML = 2000;
 export const WATER_QUICK_ADD_ML = [250, 500];
+export const TEETH_GOAL_TIMES = 2;
+export const TEETH_QUICK_ADD = [1];
 /** Un libro al mese di media lunghezza: usato come riferimento per l'obiettivo di lettura giornaliero. */
 export const READING_BOOK_PAGES = 300;
 export const READING_DAILY_GOAL_PAGES = Math.round(READING_BOOK_PAGES / 30);
@@ -28,8 +30,10 @@ export interface ActivityDef {
   days: DayKey[];
   kind: ActivityKind;
   unit?: string;
-  /** Obiettivo numerico (passi, pagine, ml) quando applicabile. */
+  /** Obiettivo numerico (passi, pagine, ml, volte) quando applicabile. */
   goal?: number;
+  /** Incrementi rapidi per i moduli "counter" (es. [250, 500] per l'acqua, [1] per le pillole/denti). */
+  quickAdd?: number[];
 }
 
 export const ACTIVITY_DEFS: Record<ActivityKey, ActivityDef> = {
@@ -76,6 +80,18 @@ export const ACTIVITY_DEFS: Record<ActivityKey, ActivityDef> = {
     kind: 'counter',
     unit: 'ml',
     goal: WATER_GOAL_ML,
+    quickAdd: WATER_QUICK_ADD_ML,
+  },
+  teeth: {
+    key: 'teeth',
+    label: 'Lavare i Denti',
+    shortLabel: 'DENTI',
+    icon: 'brush-outline',
+    days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+    kind: 'counter',
+    unit: 'volte',
+    goal: TEETH_GOAL_TIMES,
+    quickAdd: TEETH_QUICK_ADD,
   },
   pills: {
     key: 'pills',
@@ -111,6 +127,7 @@ export const ACTIVITY_ORDER: ActivityKey[] = [
   'cardio',
   'walking',
   'water',
+  'teeth',
   'pills',
   'english',
   'reading',
@@ -128,22 +145,22 @@ export const DAY_TEMPLATES: Record<
   work: {
     label: 'Giorno Lavoro',
     icon: 'briefcase-outline',
-    activities: ['weights', 'walking', 'water', 'pills', 'english', 'reading'],
+    activities: ['weights', 'walking', 'water', 'teeth', 'pills', 'english', 'reading'],
   },
   study: {
     label: 'Giorno Studio',
     icon: 'school-outline',
-    activities: ['ccna', 'walking', 'water', 'pills', 'english', 'reading'],
+    activities: ['ccna', 'walking', 'water', 'teeth', 'pills', 'english', 'reading'],
   },
   free: {
     label: 'Giorno Libero',
     icon: 'sunny-outline',
-    activities: ['walking', 'water', 'pills', 'reading'],
+    activities: ['walking', 'water', 'teeth', 'pills', 'reading'],
   },
   rest: {
     label: 'Giorno Riposo',
     icon: 'bed-outline',
-    activities: ['water', 'pills', 'reading'],
+    activities: ['water', 'teeth', 'pills', 'reading'],
   },
 };
 
@@ -224,8 +241,9 @@ export function activityWeight(entry?: { status: ActivityStatus }): number {
   return 0;
 }
 
-export function statusFromWaterValue(ml: number): ActivityStatus {
-  if (ml >= WATER_GOAL_ML) return 'done';
-  if (ml > 0) return 'partial';
+/** Stato derivato di un modulo "counter" (acqua, denti, ...) rispetto al suo obiettivo. */
+export function statusFromCounterValue(value: number, goal: number): ActivityStatus {
+  if (goal > 0 && value >= goal) return 'done';
+  if (value > 0) return 'partial';
   return 'pending';
 }

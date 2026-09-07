@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { CCNA_TOTAL_LESSONS, statusFromWaterValue, WATER_GOAL_ML } from '../data/schedule';
+import { ACTIVITY_DEFS, CCNA_TOTAL_LESSONS, statusFromCounterValue } from '../data/schedule';
 import { computeDayCompletion } from '../data/stats';
 import {
   DEFAULT_SETTINGS,
@@ -27,7 +27,7 @@ interface RoutineContextValue {
   dismissCelebration: () => void;
   setActivityStatus: (date: Date, key: ActivityKey, status: ActivityStatus) => Promise<void>;
   setActivityValue: (date: Date, key: ActivityKey, value: number) => Promise<void>;
-  addWater: (date: Date, deltaMl: number) => Promise<void>;
+  incrementCounter: (date: Date, key: ActivityKey, delta: number) => Promise<void>;
   setNote: (date: Date, note: string) => Promise<void>;
   setTemplate: (date: Date, template: DayTemplateId) => Promise<void>;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
@@ -134,14 +134,19 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
     [records]
   );
 
-  /** Contatore rapido acqua (+250/+500ml): lo stato del modulo è derivato automaticamente dal totale. */
-  const addWater = useCallback(
-    async (date: Date, deltaMl: number) => {
+  /**
+   * Contatore rapido per i moduli "counter" (acqua, denti, ...): lo stato del
+   * modulo è derivato automaticamente confrontando il totale con l'obiettivo
+   * definito in ACTIVITY_DEFS.
+   */
+  const incrementCounter = useCallback(
+    async (date: Date, key: ActivityKey, delta: number) => {
       const dateKey = formatDateKey(date);
-      const existing = records[dateKey]?.activities.water;
-      const nextValue = Math.max(0, Math.min(WATER_GOAL_ML * 3, (existing?.value ?? 0) + deltaMl));
-      const updated = await setActivityEntry(date, 'water', {
-        status: statusFromWaterValue(nextValue),
+      const existing = records[dateKey]?.activities[key];
+      const goal = ACTIVITY_DEFS[key].goal ?? 0;
+      const nextValue = Math.max(0, (existing?.value ?? 0) + delta);
+      const updated = await setActivityEntry(date, key, {
+        status: statusFromCounterValue(nextValue, goal),
         value: nextValue,
       });
       const nextRecords = { ...records, [dateKey]: updated };
@@ -186,7 +191,7 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
       dismissCelebration,
       setActivityStatus,
       setActivityValue,
-      addWater,
+      incrementCounter,
       setNote,
       setTemplate,
       updateSettings,
@@ -201,7 +206,7 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
       dismissCelebration,
       setActivityStatus,
       setActivityValue,
-      addWater,
+      incrementCounter,
       setNote,
       setTemplate,
       updateSettings,
