@@ -134,12 +134,16 @@ export async function getCategoryPieData(monthKey, payday = 27, type = 'expense'
  * capitale già accumulato finora (base di partenza della capitalizzazione).
  */
 export async function getProjectionBasis(monthKey, payday = 27) {
-  const keys = [...monthKeysBack(monthKey, 5), monthKey];
+  const allMonths = await getAvailableMonths(payday);
+  const availableSet = new Set(allMonths);
+  const candidateKeys = [...monthKeysBack(monthKey, 5), monthKey];
+  const keysWithData = candidateKeys.filter((key) => availableSet.has(key));
+  const keysToAverage = keysWithData.length > 0 ? keysWithData : [monthKey];
+
   const nets = [];
-  for (const key of keys) nets.push((await getTotalsForRange(getFinancialPeriodRange(key, payday))).net);
+  for (const key of keysToAverage) nets.push((await getTotalsForRange(getFinancialPeriodRange(key, payday))).net);
   const avgMonthly = Math.max(0, average(nets));
 
-  const allMonths = await getAvailableMonths(payday);
   let startingCapital = 0;
   for (const key of allMonths) startingCapital += (await getTotalsForRange(getFinancialPeriodRange(key, payday))).net;
 
