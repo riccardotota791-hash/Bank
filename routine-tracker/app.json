@@ -73,8 +73,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
+        "projectId": "47a925b1-fc27-462e-a6a0-d5ec8bfaf0fb"
       }
-    }
+    },
+    "owner": "riol05x"
   }
 }
