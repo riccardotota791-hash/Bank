@@ -25,7 +25,7 @@ export default function StatisticsScreen() {
     const monthKey = currentFinancialMonthKey(payday);
     const year = new Date().getFullYear();
     const [trendData, pie, basis, ySummary] = await Promise.all([
-      getYearlyTrend(year, monthKey, payday),
+      getYearlyTrend(monthKey, payday),
       getCategoryPieData(monthKey, payday),
       getProjectionBasis(monthKey, payday),
       getYearSummary(year),

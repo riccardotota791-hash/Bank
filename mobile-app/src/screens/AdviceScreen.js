@@ -3,18 +3,26 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenContainer, Card, SectionTitle, LoadingView, Badge } from '../components/UI';
 import AdviceCard from '../components/AdviceCard';
+import GoldenRuleCard from '../components/GoldenRuleCard';
 import WhatIfSimulator from '../components/WhatIfSimulator';
 import { useApp } from '../context/AppContext';
-import { getMonthlyReport } from '../services/reportService';
+import { getMonthlyReport, getGoldenRulesData } from '../services/reportService';
 import { COLORS, SPACING, FONT } from '../constants/theme';
 import { formatEuro, currentFinancialMonthKey } from '../utils/formatters';
 
 export default function AdviceScreen() {
   const { dataVersion, settings } = useApp();
   const [report, setReport] = useState(null);
+  const [goldenRules, setGoldenRules] = useState(null);
 
   const load = useCallback(async () => {
-    setReport(await getMonthlyReport(currentFinancialMonthKey(settings?.payday ?? 27)));
+    const monthKey = currentFinancialMonthKey(settings?.payday ?? 27);
+    const [reportData, goldenRulesData] = await Promise.all([
+      getMonthlyReport(monthKey),
+      getGoldenRulesData(monthKey, settings?.payday ?? 27),
+    ]);
+    setReport(reportData);
+    setGoldenRules(goldenRulesData);
   }, [settings?.payday]);
 
   useFocusEffect(
@@ -80,6 +88,43 @@ export default function AdviceScreen() {
             </Card>
           </View>
         ) : null}
+
+        <View style={{ marginTop: SPACING.xl }}>
+          <SectionTitle subtitle="I principi da seguire ogni mese">Regole d'oro del risparmio</SectionTitle>
+          <Card>
+            <GoldenRuleCard
+              icon="pie-chart-outline"
+              title="La regola del 50/30/20"
+              text="Dividi il reddito netto mensile in tre categorie: 50% risparmio, 30% spese personali (svago, cene fuori, hobby, viaggi), 20% bisogni primari (cibo e trasporti)."
+              footnote={
+                goldenRules && goldenRules.income > 0
+                  ? `Con ${formatEuro(goldenRules.income)}: ${formatEuro(goldenRules.split.savings)} risparmio · ${formatEuro(goldenRules.split.personal)} personali · ${formatEuro(goldenRules.split.essential)} primari`
+                  : null
+              }
+            />
+            <GoldenRuleCard
+              icon="wallet-outline"
+              title="Paga prima te stesso"
+              text="Appena ricevi lo stipendio, trasferisci subito la quota di risparmio prefissata su un conto separato, prima di qualsiasi altra spesa."
+            />
+            <GoldenRuleCard
+              icon="time-outline"
+              title="La regola delle 48 ore"
+              text="Per gli acquisti non essenziali, aspetta due giorni prima di comprare: elimina la maggior parte dei consumi impulsivi."
+            />
+            <GoldenRuleCard
+              icon="shield-checkmark-outline"
+              title="Fondo di emergenza (3-6 mesi)"
+              text="Accumula una riserva liquida pari a 3-6 mesi delle tue uscite essenziali, prima di destinare denaro ad altri obiettivi o investimenti."
+              footnote={
+                goldenRules && goldenRules.avgEssentialMonthly > 0
+                  ? `Obiettivo consigliato: tra ${formatEuro(goldenRules.emergencyFundMin)} e ${formatEuro(goldenRules.emergencyFundMax)}`
+                  : null
+              }
+              isLast
+            />
+          </Card>
+        </View>
 
         <View style={{ marginTop: SPACING.xl }}>
           <SectionTitle subtitle="Quanto potresti avere investendo con costanza">Simulatore what-if</SectionTitle>

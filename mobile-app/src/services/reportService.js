@@ -5,6 +5,7 @@ import {
   getYearTotals,
   getAvailableMonths,
 } from '../db/transactionsRepo';
+import { getCategoriesByType } from '../db/categoriesRepo';
 import { getAllSettings } from '../db/settingsRepo';
 import { computeSavingsRate, compareValues, recommendedSavingsTarget, reinvestmentRate, average } from '../engine/calculations';
 import { computeTargetSavings, detectOverspending, buildAdviceMessages } from '../engine/advice';
@@ -15,6 +16,17 @@ function monthKeysBack(monthKey, n) {
   const keys = [];
   for (let i = n; i >= 1; i--) keys.push(shiftMonthKey(monthKey, -i));
   return keys;
+}
+
+/**
+ * Ultime `maxMonths` chiavi di mesi finanziari che hanno almeno un
+ * movimento registrato, fino a monthKey incluso, in ordine cronologico.
+ * Evita di "diluire" medie e grafici con mesi fantasma senza dati.
+ */
+async function recentAvailableMonthKeys(monthKey, payday, maxMonths) {
+  const allMonths = await getAvailableMonths(payday);
+  const upTo = allMonths.filter((key) => key <= monthKey);
+  return upTo.slice(0, maxMonths).reverse();
 }
 
 export async function getMonthlyReport(monthKey) {
@@ -104,15 +116,10 @@ export async function getMonthlyReport(monthKey) {
   };
 }
 
-export async function getYearlyTrend(year, upToMonthKey, payday = 27) {
-  const months = [];
-  for (let m = 1; m <= 12; m++) {
-    const key = `${year}-${String(m).padStart(2, '0')}`;
-    if (key > upToMonthKey) break;
-    months.push(key);
-  }
+export async function getYearlyTrend(monthKey, payday = 27, maxMonths = 6) {
+  const keys = await recentAvailableMonthKeys(monthKey, payday, maxMonths);
   const results = [];
-  for (const key of months) {
+  for (const key of keys) {
     const totals = await getTotalsForRange(getFinancialPeriodRange(key, payday));
     results.push({ monthKey: key, ...totals, rate: computeSavingsRate(totals.income, totals.expense) });
   }
@@ -134,18 +141,49 @@ export async function getCategoryPieData(monthKey, payday = 27, type = 'expense'
  * capitale già accumulato finora (base di partenza della capitalizzazione).
  */
 export async function getProjectionBasis(monthKey, payday = 27) {
-  const allMonths = await getAvailableMonths(payday);
-  const availableSet = new Set(allMonths);
-  const candidateKeys = [...monthKeysBack(monthKey, 5), monthKey];
-  const keysWithData = candidateKeys.filter((key) => availableSet.has(key));
+  const keysWithData = await recentAvailableMonthKeys(monthKey, payday, 6);
   const keysToAverage = keysWithData.length > 0 ? keysWithData : [monthKey];
 
   const nets = [];
   for (const key of keysToAverage) nets.push((await getTotalsForRange(getFinancialPeriodRange(key, payday))).net);
   const avgMonthly = Math.max(0, average(nets));
 
+  const allMonths = await getAvailableMonths(payday);
   let startingCapital = 0;
   for (const key of allMonths) startingCapital += (await getTotalsForRange(getFinancialPeriodRange(key, payday))).net;
 
   return { avgMonthly, startingCapital: Math.max(0, startingCapital) };
+}
+
+/**
+ * Dati per la sezione "Regole d'oro": split 50/30/20 sul reddito del
+ * periodo corrente e obiettivo di fondo di emergenza (3-6 mesi di
+ * bisogni primari: Trasporti + Spesa alimentare), calcolato sulla media
+ * degli ultimi mesi finanziari disponibili (fino a 6).
+ */
+export async function getGoldenRulesData(monthKey, payday = 27) {
+  const totals = await getTotalsForRange(getFinancialPeriodRange(monthKey, payday));
+
+  const expenseCategories = await getCategoriesByType('expense');
+  const essentialCategories = expenseCategories.filter((c) => ['Trasporti', 'Spesa alimentare'].includes(c.name));
+
+  const keysWithData = await recentAvailableMonthKeys(monthKey, payday, 6);
+  const ranges = (keysWithData.length > 0 ? keysWithData : [monthKey]).map((key) => getFinancialPeriodRange(key, payday));
+
+  let avgEssentialMonthly = 0;
+  for (const cat of essentialCategories) {
+    avgEssentialMonthly += await getCategoryAverageOverRanges(cat.id, ranges);
+  }
+
+  return {
+    income: totals.income,
+    split: {
+      savings: totals.income * 0.5,
+      personal: totals.income * 0.3,
+      essential: totals.income * 0.2,
+    },
+    avgEssentialMonthly,
+    emergencyFundMin: avgEssentialMonthly * 3,
+    emergencyFundMax: avgEssentialMonthly * 6,
+  };
 }
