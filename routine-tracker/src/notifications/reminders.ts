@@ -1,11 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import {
-  ACTIVITY_DEFS,
-  getScheduledActivities,
-  PILLS_REMINDER_HOUR,
-  PILLS_REMINDER_MINUTE,
-} from '../data/schedule';
+import { ACTIVITY_DEFS, getScheduledActivities } from '../data/schedule';
 import { getCcnaProgress, getSettings } from '../data/storage';
 import { DayKey } from '../data/types';
 import { addDays, DAY_LABELS, startOfWeek, toExpoWeekday } from '../utils/date';
@@ -84,8 +79,8 @@ export async function rescheduleReminders(): Promise<void> {
     });
   }
 
-  // Promemoria "Pillole": fisso alle 9:00, tutti i giorni, indipendente
-  // dall'orario configurabile degli altri moduli.
+  // Promemoria "Pillole": orario dedicato, configurabile dall'utente nelle
+  // Impostazioni, indipendente da quello degli altri moduli.
   await Notifications.scheduleNotificationAsync({
     content: {
       title: '💊 UPLINK — Pillole',
@@ -94,8 +89,8 @@ export async function rescheduleReminders(): Promise<void> {
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: PILLS_REMINDER_HOUR,
-      minute: PILLS_REMINDER_MINUTE,
+      hour: settings.pillsReminderHour,
+      minute: settings.pillsReminderMinute,
     },
   });
 }

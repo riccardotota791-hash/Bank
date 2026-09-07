@@ -1,29 +1,56 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ScreenContainer } from '../components/ScreenContainer';
-import { SectionHeader } from '../components/SectionHeader';
+import { HeatmapCalendar } from '../components/HeatmapCalendar';
 import { LedDot } from '../components/LedDot';
 import { ProgressBar } from '../components/ProgressBar';
-import { ACTIVITY_DEFS, ACTIVITY_ORDER, getScheduledActivities, isRestDay } from '../data/schedule';
+import { ScreenContainer } from '../components/ScreenContainer';
+import { SectionHeader } from '../components/SectionHeader';
+import {
+  ACTIVITY_DEFS,
+  ACTIVITY_ORDER,
+  getScheduledActivities,
+  isActivityDone,
+  isActivityPartial,
+  isRestDay,
+} from '../data/schedule';
 import { computeDayCompletion } from '../data/stats';
 import { useRoutineStore } from '../hooks/RoutineStore';
 import { colors, fonts, radius, spacing } from '../theme/theme';
-import { DAY_LABELS, formatDateKey, formatShort, getDayKey, isSameDay, lastNDays } from '../utils/date';
+import {
+  addMonths,
+  DAY_LABELS,
+  formatDateKey,
+  formatShort,
+  getDayKey,
+  isSameDay,
+  lastNDays,
+} from '../utils/date';
 
 export default function WeekScreen() {
   const { records, ccnaProgress } = useRoutineStore();
   const today = useMemo(() => new Date(), []);
   const days = useMemo(() => lastNDays(today, 7), [today]);
+  const [heatmapMonth, setHeatmapMonth] = useState(() => new Date());
 
   return (
     <ScreenContainer>
+      <SectionHeader title="Mappa di calore" hint="Completamento mensile" />
+      <HeatmapCalendar
+        monthDate={heatmapMonth}
+        records={records}
+        today={today}
+        ccnaCompletedLessons={ccnaProgress}
+        onPrevMonth={() => setHeatmapMonth((m) => addMonths(m, -1))}
+        onNextMonth={() => setHeatmapMonth((m) => addMonths(m, 1))}
+      />
+
       <SectionHeader title="Ultimi 7 giorni" hint="Storico moduli" />
       {days.map((day) => {
         const dayKey = getDayKey(day);
         const record = records[formatDateKey(day)];
-        const scheduled = getScheduledActivities(day, ccnaProgress);
-        const { done, percent } = computeDayCompletion(day, record, ccnaProgress);
-        const rest = isRestDay(dayKey);
+        const scheduled = getScheduledActivities(day, ccnaProgress, record?.template);
+        const { doneCount, percent } = computeDayCompletion(day, record, ccnaProgress);
+        const rest = isRestDay(dayKey) && (record?.template ?? 'auto') === 'auto';
         const isToday = isSameDay(day, today);
 
         return (
@@ -45,10 +72,11 @@ export default function WeekScreen() {
             <View style={styles.ledRow}>
               {ACTIVITY_ORDER.filter((key) => scheduled.includes(key)).map((key) => {
                 const def = ACTIVITY_DEFS[key];
-                const activityDone = !!record?.activities[key]?.done;
+                const entry = record?.activities[key];
+                const ledState = isActivityDone(entry) ? 'on' : isActivityPartial(entry) ? 'partial' : 'off';
                 return (
                   <View key={key} style={styles.ledItem}>
-                    <LedDot state={activityDone ? 'on' : 'off'} size={7} />
+                    <LedDot state={ledState} size={7} />
                     <Text style={styles.ledLabel}>{def.shortLabel}</Text>
                   </View>
                 );
@@ -58,7 +86,7 @@ export default function WeekScreen() {
               )}
             </View>
 
-            <Text style={styles.doneSummary}>{done}/{scheduled.length} completati</Text>
+            <Text style={styles.doneSummary}>{doneCount}/{scheduled.length} completati</Text>
           </View>
         );
       })}

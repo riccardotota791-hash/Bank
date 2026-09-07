@@ -1,5 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityEntry, ActivityKey, AppSettings, DailyRecord } from './types';
+import {
+  ActivityEntry,
+  ActivityKey,
+  AppSettings,
+  DailyRecord,
+  DayTemplateId,
+} from './types';
+import { DEFAULT_PILLS_REMINDER_HOUR, DEFAULT_PILLS_REMINDER_MINUTE } from './schedule';
 import { formatDateKey, getDayKey } from '../utils/date';
 
 const KEYS = {
@@ -12,6 +19,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   reminderHour: 19,
   reminderMinute: 0,
+  pillsReminderHour: DEFAULT_PILLS_REMINDER_HOUR,
+  pillsReminderMinute: DEFAULT_PILLS_REMINDER_MINUTE,
 };
 
 export async function getAllRecords(): Promise<Record<string, DailyRecord>> {
@@ -46,6 +55,26 @@ export async function setActivityEntry(
     ...existing,
     activities: { ...existing.activities, [activity]: entry },
   };
+  all[key] = updated;
+  await AsyncStorage.setItem(KEYS.records, JSON.stringify(all));
+  return updated;
+}
+
+export async function setDayNote(date: Date, note: string): Promise<DailyRecord> {
+  const all = await getAllRecords();
+  const key = formatDateKey(date);
+  const existing = all[key] ?? emptyRecordFor(date);
+  const updated: DailyRecord = { ...existing, note };
+  all[key] = updated;
+  await AsyncStorage.setItem(KEYS.records, JSON.stringify(all));
+  return updated;
+}
+
+export async function setDayTemplate(date: Date, template: DayTemplateId): Promise<DailyRecord> {
+  const all = await getAllRecords();
+  const key = formatDateKey(date);
+  const existing = all[key] ?? emptyRecordFor(date);
+  const updated: DailyRecord = { ...existing, template };
   all[key] = updated;
   await AsyncStorage.setItem(KEYS.records, JSON.stringify(all));
   return updated;

@@ -1,24 +1,14 @@
-import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import React from 'react';
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
+import { TimePickerField } from '../components/TimePickerField';
 import { sendTestNotification } from '../notifications/reminders';
 import { useRoutineStore } from '../hooks/RoutineStore';
-import { PILLS_REMINDER_HOUR, PILLS_REMINDER_MINUTE } from '../data/schedule';
 import { colors, fonts, radius, spacing } from '../theme/theme';
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useRoutineStore();
-  const [hourDraft, setHourDraft] = useState(String(settings.reminderHour).padStart(2, '0'));
-  const [minuteDraft, setMinuteDraft] = useState(String(settings.reminderMinute).padStart(2, '0'));
-
-  const commitTime = () => {
-    const hour = Math.min(23, Math.max(0, Number(hourDraft) || 0));
-    const minute = Math.min(59, Math.max(0, Number(minuteDraft) || 0));
-    setHourDraft(String(hour).padStart(2, '0'));
-    setMinuteDraft(String(minute).padStart(2, '0'));
-    updateSettings({ reminderHour: hour, reminderMinute: minute });
-  };
 
   return (
     <ScreenContainer>
@@ -40,39 +30,25 @@ export default function SettingsScreen() {
 
         <View style={styles.divider} />
 
-        <View style={styles.row}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>Orario promemoria</Text>
-            <Text style={styles.rowSub}>Formato 24h</Text>
-          </View>
-          <View style={styles.timeRow}>
-            <TextInput
-              value={hourDraft}
-              onChangeText={setHourDraft}
-              onEndEditing={commitTime}
-              keyboardType="number-pad"
-              maxLength={2}
-              style={styles.timeInput}
-            />
-            <Text style={styles.timeSep}>:</Text>
-            <TextInput
-              value={minuteDraft}
-              onChangeText={setMinuteDraft}
-              onEndEditing={commitTime}
-              keyboardType="number-pad"
-              maxLength={2}
-              style={styles.timeInput}
-            />
-          </View>
-        </View>
+        <TimePickerField
+          label="Orario promemoria generale"
+          hint="Vale per tutti i moduli tranne Pillole"
+          hour={settings.reminderHour}
+          minute={settings.reminderMinute}
+          onChange={(hour, minute) => updateSettings({ reminderHour: hour, reminderMinute: minute })}
+        />
 
         <View style={styles.divider} />
 
-        <Text style={styles.footnote}>
-          Il modulo Pillole ha un promemoria fisso separato alle{' '}
-          {String(PILLS_REMINDER_HOUR).padStart(2, '0')}:
-          {String(PILLS_REMINDER_MINUTE).padStart(2, '0')}, non modificabile da qui.
-        </Text>
+        <TimePickerField
+          label="Orario promemoria Pillole"
+          hint="Indipendente dagli altri moduli"
+          hour={settings.pillsReminderHour}
+          minute={settings.pillsReminderMinute}
+          onChange={(hour, minute) =>
+            updateSettings({ pillsReminderHour: hour, pillsReminderMinute: minute })
+          }
+        />
       </View>
 
       <Pressable
@@ -129,32 +105,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.border,
     marginVertical: spacing.sm,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  timeInput: {
-    backgroundColor: colors.bgAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    color: colors.textPrimary,
-    fontWeight: '700',
-    textAlign: 'center',
-    width: 44,
-    paddingVertical: 6,
-    fontVariant: ['tabular-nums'],
-  },
-  timeSep: {
-    color: colors.textSecondary,
-    fontWeight: '700',
-  },
-  footnote: {
-    color: colors.textMuted,
-    fontSize: 11,
-    lineHeight: 16,
   },
   testButton: {
     borderWidth: 1,

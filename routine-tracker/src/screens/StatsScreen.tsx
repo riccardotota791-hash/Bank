@@ -1,11 +1,22 @@
 import React, { useMemo } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
+import { AchievementGrid } from '../components/AchievementGrid';
+import { HabitInsightCard } from '../components/HabitInsightCard';
+import { ProgressBar } from '../components/ProgressBar';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
-import { ProgressBar } from '../components/ProgressBar';
+import { StatTile } from '../components/StatTile';
+import { evaluateAchievements } from '../data/achievements';
 import { CCNA_TOTAL_LESSONS, isCcnaCourseOver } from '../data/schedule';
-import { computeReadingStreak, computeWeeklyCompletionHistory } from '../data/stats';
+import {
+  computeAllTimeCompletionRate,
+  computeHabitInsights,
+  computeMonthCompletionRate,
+  computeReadingStreak,
+  computeWeeklyCompletionHistory,
+  sumActivityValue,
+} from '../data/stats';
 import { useRoutineStore } from '../hooks/RoutineStore';
 import { colors, fonts, radius, spacing } from '../theme/theme';
 
@@ -20,11 +31,19 @@ export default function StatsScreen() {
     [records, today, ccnaProgress]
   );
   const streak = useMemo(() => computeReadingStreak(records, today), [records, today]);
+  const totalPages = useMemo(() => sumActivityValue(records, 'reading'), [records]);
 
-  const totalPages = useMemo(
-    () => Object.values(records).reduce((sum, r) => sum + (r.activities.reading?.value ?? 0), 0),
-    [records]
+  const monthRate = useMemo(
+    () => computeMonthCompletionRate(records, today, ccnaProgress),
+    [records, today, ccnaProgress]
   );
+  const allTimeRate = useMemo(
+    () => computeAllTimeCompletionRate(records, today, ccnaProgress),
+    [records, today, ccnaProgress]
+  );
+
+  const insights = useMemo(() => computeHabitInsights(records, ccnaProgress), [records, ccnaProgress]);
+  const achievements = useMemo(() => evaluateAchievements(records, ccnaProgress), [records, ccnaProgress]);
 
   const chartData = {
     labels: weeklyHistory.map((w) => w.label),
@@ -35,6 +54,12 @@ export default function StatsScreen() {
 
   return (
     <ScreenContainer>
+      <SectionHeader title="Tasso di disciplina" hint="% moduli completati" />
+      <View style={styles.tileRow}>
+        <StatTile label="Mese corrente" percent={monthRate} />
+        <StatTile label="Sempre" percent={allTimeRate} />
+      </View>
+
       <SectionHeader title="Streak di lettura" />
       <View style={styles.streakCard}>
         <Text style={styles.streakNumber}>{streak}</Text>
@@ -66,6 +91,18 @@ export default function StatsScreen() {
         />
       </View>
 
+      {insights.length > 0 && (
+        <>
+          <SectionHeader title="Correlazioni tra abitudini" hint="statistiche, non causali" />
+          {insights.map((insight) => (
+            <HabitInsightCard key={`${insight.fromKey}-${insight.toKey}`} insight={insight} />
+          ))}
+        </>
+      )}
+
+      <SectionHeader title="Achievement" hint={`${achievements.filter((a) => a.unlocked).length}/${achievements.length} sbloccati`} />
+      <AchievementGrid achievements={achievements} />
+
       <SectionHeader title="Corso CCNA" />
       <View style={styles.ccnaCard}>
         <View style={styles.ccnaRow}>
@@ -84,6 +121,10 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
+  tileRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   streakCard: {
     backgroundColor: colors.panelAlt,
     borderRadius: radius.lg,

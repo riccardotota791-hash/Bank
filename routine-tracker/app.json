@@ -24,7 +24,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.ACTIVITY_RECOGNITION"
       ]
     },
     "web": {
@@ -45,6 +46,28 @@
           "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#050a12"
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Consenti a Uplink Routine di leggere il sensore passi per sincronizzare la Camminata."
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "RoutineWidget",
+              "label": "Uplink Routine",
+              "description": "Percentuale di completamento di oggi e azioni rapide (acqua, passi).",
+              "minWidth": "220dp",
+              "minHeight": "120dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
         }
       ]
     ],

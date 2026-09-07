@@ -15,6 +15,8 @@ export const colors = {
   accent: '#2de3c9', // verde-acqua: attività completate / "link up"
   accentDim: '#134d44',
   accentSoft: 'rgba(45, 227, 201, 0.12)',
+  accentMid: '#3ba892', // verde opaco/intermedio: modulo "in corso" (parziale)
+  accentMidSoft: 'rgba(59, 168, 146, 0.14)',
 
   amber: '#f5b942', // in corso / attenzione
   amberSoft: 'rgba(245, 185, 66, 0.12)',

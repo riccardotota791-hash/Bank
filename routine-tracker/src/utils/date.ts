@@ -81,6 +81,22 @@ export function startOfWeek(date: Date): Date {
   return addDays(d, -offsetFromMonday);
 }
 
+export function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function addMonths(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+export function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+export function formatMonthLabel(date: Date): string {
+  return `${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`;
+}
+
 export function formatHuman(date: Date): string {
   return `${date.getDate()} ${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`;
 }

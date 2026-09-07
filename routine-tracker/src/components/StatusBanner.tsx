@@ -7,14 +7,16 @@ import { ProgressBar } from './ProgressBar';
 export function StatusBanner({
   dayLabel,
   dateLabel,
-  done,
+  doneCount,
+  partialCount,
   scheduled,
   percent,
   restDay,
 }: {
   dayLabel: string;
   dateLabel: string;
-  done: number;
+  doneCount: number;
+  partialCount: number;
   scheduled: number;
   percent: number;
   restDay: boolean;
@@ -35,7 +37,9 @@ export function StatusBanner({
 
       <View style={styles.statsRow}>
         <Text style={styles.percent}>{percent}%</Text>
-        <Text style={styles.statsSub}>{done}/{scheduled} moduli completati</Text>
+        <Text style={styles.statsSub}>
+          {doneCount}/{scheduled} completati{partialCount > 0 ? ` · ${partialCount} in corso` : ''}
+        </Text>
       </View>
       <ProgressBar percent={percent} height={8} />
     </View>

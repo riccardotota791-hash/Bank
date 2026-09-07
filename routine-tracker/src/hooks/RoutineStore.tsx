@@ -1,5 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { CCNA_TOTAL_LESSONS } from '../data/schedule';
+import { CCNA_TOTAL_LESSONS, statusFromWaterValue, WATER_GOAL_ML } from '../data/schedule';
+import { computeDayCompletion } from '../data/stats';
 import {
   DEFAULT_SETTINGS,
   getAllRecords,
@@ -8,18 +10,26 @@ import {
   saveSettings,
   setActivityEntry,
   setCcnaProgress,
+  setDayNote,
+  setDayTemplate,
 } from '../data/storage';
-import { ActivityKey, AppSettings, DailyRecord } from '../data/types';
-import { formatDateKey } from '../utils/date';
+import { ActivityKey, ActivityStatus, AppSettings, DailyRecord, DayTemplateId } from '../data/types';
+import { formatDateKey, isSameDay } from '../utils/date';
 import { rescheduleReminders } from '../notifications/reminders';
+import { syncWidget } from '../widgets/syncWidget';
 
 interface RoutineContextValue {
   loading: boolean;
   records: Record<string, DailyRecord>;
   ccnaProgress: number;
   settings: AppSettings;
-  toggleActivity: (date: Date, key: ActivityKey) => Promise<void>;
+  celebrating: boolean;
+  dismissCelebration: () => void;
+  setActivityStatus: (date: Date, key: ActivityKey, status: ActivityStatus) => Promise<void>;
   setActivityValue: (date: Date, key: ActivityKey, value: number) => Promise<void>;
+  addWater: (date: Date, deltaMl: number) => Promise<void>;
+  setNote: (date: Date, note: string) => Promise<void>;
+  setTemplate: (date: Date, template: DayTemplateId) => Promise<void>;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -31,6 +41,7 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
   const [records, setRecords] = useState<Record<string, DailyRecord>>({});
   const [ccnaProgress, setCcnaProgressState] = useState(0);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [celebrating, setCelebrating] = useState(false);
 
   const refresh = useCallback(async () => {
     const [allRecords, progress, storedSettings] = await Promise.all([
@@ -51,39 +62,62 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [refresh]);
 
-  const toggleActivity = useCallback(
-    async (date: Date, key: ActivityKey) => {
+  const dismissCelebration = useCallback(() => setCelebrating(false), []);
+
+  /** Buzz leggero ad ogni cambio di stato + celebrazione se la giornata odierna raggiunge il 100%. */
+  const notifyStatusChange = useCallback(
+    (date: Date, dateKey: string, nextRecords: Record<string, DailyRecord>, ccnaForCheck: number) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      if (!isSameDay(date, new Date())) return;
+      const { percent, scheduled } = computeDayCompletion(date, nextRecords[dateKey], ccnaForCheck);
+      if (scheduled > 0 && percent >= 100) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        setCelebrating(true);
+      }
+      syncWidget();
+    },
+    []
+  );
+
+  const setActivityStatus = useCallback(
+    async (date: Date, key: ActivityKey, status: ActivityStatus) => {
       const dateKey = formatDateKey(date);
       const existing = records[dateKey]?.activities[key];
-      const nextDone = !existing?.done;
 
       if (key === 'ccna') {
+        const wasDone = existing?.status === 'done';
+        const nowDone = status === 'done';
         let nextProgress = ccnaProgress;
-        let entry;
-        if (nextDone) {
+        let entry: { status: ActivityStatus; lessonNumber?: number };
+
+        if (nowDone && !wasDone) {
           nextProgress = Math.min(CCNA_TOTAL_LESSONS, ccnaProgress + 1);
-          entry = { done: true, lessonNumber: nextProgress };
-        } else {
+          entry = { status, lessonNumber: nextProgress };
+        } else if (!nowDone && wasDone) {
           if (existing?.lessonNumber === ccnaProgress) {
             nextProgress = Math.max(0, ccnaProgress - 1);
           }
-          entry = { done: false };
+          entry = { status };
+        } else {
+          entry = { status, lessonNumber: existing?.lessonNumber };
         }
+
         await setCcnaProgress(nextProgress);
         setCcnaProgressState(nextProgress);
         const updated = await setActivityEntry(date, key, entry);
-        setRecords((prev) => ({ ...prev, [dateKey]: updated }));
+        const nextRecords = { ...records, [dateKey]: updated };
+        setRecords(nextRecords);
+        notifyStatusChange(date, dateKey, nextRecords, nextProgress);
         await rescheduleReminders();
         return;
       }
 
-      const updated = await setActivityEntry(date, key, {
-        done: nextDone,
-        value: existing?.value,
-      });
-      setRecords((prev) => ({ ...prev, [dateKey]: updated }));
+      const updated = await setActivityEntry(date, key, { status, value: existing?.value });
+      const nextRecords = { ...records, [dateKey]: updated };
+      setRecords(nextRecords);
+      notifyStatusChange(date, dateKey, nextRecords, ccnaProgress);
     },
-    [records, ccnaProgress]
+    [records, ccnaProgress, notifyStatusChange]
   );
 
   const setActivityValue = useCallback(
@@ -91,12 +125,45 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
       const dateKey = formatDateKey(date);
       const existing = records[dateKey]?.activities[key];
       const updated = await setActivityEntry(date, key, {
-        done: existing?.done ?? false,
+        status: existing?.status ?? 'pending',
         value,
       });
       setRecords((prev) => ({ ...prev, [dateKey]: updated }));
+      syncWidget();
     },
     [records]
+  );
+
+  /** Contatore rapido acqua (+250/+500ml): lo stato del modulo è derivato automaticamente dal totale. */
+  const addWater = useCallback(
+    async (date: Date, deltaMl: number) => {
+      const dateKey = formatDateKey(date);
+      const existing = records[dateKey]?.activities.water;
+      const nextValue = Math.max(0, Math.min(WATER_GOAL_ML * 3, (existing?.value ?? 0) + deltaMl));
+      const updated = await setActivityEntry(date, 'water', {
+        status: statusFromWaterValue(nextValue),
+        value: nextValue,
+      });
+      const nextRecords = { ...records, [dateKey]: updated };
+      setRecords(nextRecords);
+      notifyStatusChange(date, dateKey, nextRecords, ccnaProgress);
+    },
+    [records, ccnaProgress, notifyStatusChange]
+  );
+
+  const setNote = useCallback(async (date: Date, note: string) => {
+    const dateKey = formatDateKey(date);
+    const updated = await setDayNote(date, note);
+    setRecords((prev) => ({ ...prev, [dateKey]: updated }));
+  }, []);
+
+  const setTemplate = useCallback(
+    async (date: Date, template: DayTemplateId) => {
+      const dateKey = formatDateKey(date);
+      const updated = await setDayTemplate(date, template);
+      setRecords((prev) => ({ ...prev, [dateKey]: updated }));
+    },
+    []
   );
 
   const updateSettings = useCallback(
@@ -110,8 +177,36 @@ export function RoutineProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ loading, records, ccnaProgress, settings, toggleActivity, setActivityValue, updateSettings, refresh }),
-    [loading, records, ccnaProgress, settings, toggleActivity, setActivityValue, updateSettings, refresh]
+    () => ({
+      loading,
+      records,
+      ccnaProgress,
+      settings,
+      celebrating,
+      dismissCelebration,
+      setActivityStatus,
+      setActivityValue,
+      addWater,
+      setNote,
+      setTemplate,
+      updateSettings,
+      refresh,
+    }),
+    [
+      loading,
+      records,
+      ccnaProgress,
+      settings,
+      celebrating,
+      dismissCelebration,
+      setActivityStatus,
+      setActivityValue,
+      addWater,
+      setNote,
+      setTemplate,
+      updateSettings,
+      refresh,
+    ]
   );
 
   return <RoutineContext.Provider value={value}>{children}</RoutineContext.Provider>;

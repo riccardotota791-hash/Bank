@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ActivityDef } from '../data/schedule';
-import { ActivityEntry } from '../data/types';
+import { ActivityDef, WATER_QUICK_ADD_ML } from '../data/schedule';
+import { ActivityEntry, ActivityStatus } from '../data/types';
 import { colors, fonts, radius, spacing } from '../theme/theme';
 import { LedDot } from './LedDot';
 import { ProgressBar } from './ProgressBar';
@@ -11,13 +11,24 @@ interface Props {
   def: ActivityDef;
   entry?: ActivityEntry;
   subtitle?: string;
-  goal?: number;
-  onToggleDone: () => void;
+  onStatusChange: (status: ActivityStatus) => void;
   onValueChange?: (value: number) => void;
+  onQuickAdd?: (deltaMl: number) => void;
+  onReset?: () => void;
 }
 
-export function ActivityPanel({ def, entry, subtitle, goal, onToggleDone, onValueChange }: Props) {
-  const done = !!entry?.done;
+export function ActivityPanel({
+  def,
+  entry,
+  subtitle,
+  onStatusChange,
+  onValueChange,
+  onQuickAdd,
+  onReset,
+}: Props) {
+  const status = entry?.status ?? 'pending';
+  const done = status === 'done';
+  const partial = status === 'partial';
   const value = entry?.value ?? 0;
   const [draft, setDraft] = useState(value > 0 ? String(value) : '');
 
@@ -26,59 +37,105 @@ export function ActivityPanel({ def, entry, subtitle, goal, onToggleDone, onValu
     onValueChange?.(parsed);
   };
 
+  const ledState = done ? 'on' : partial ? 'partial' : 'off';
+  const panelStyle = [styles.panel, done && styles.panelDone, partial && styles.panelPartial];
+  const titleColor = done ? colors.accent : partial ? colors.accentMid : colors.textSecondary;
+
   return (
-    <View style={[styles.panel, done && styles.panelDone]}>
+    <View style={panelStyle}>
       <View style={styles.headerRow}>
         <View style={styles.titleRow}>
-          <Ionicons
-            name={def.icon as any}
-            size={18}
-            color={done ? colors.accent : colors.textSecondary}
-          />
-          <Text style={[styles.title, done && styles.titleDone]}>{def.label}</Text>
+          <Ionicons name={def.icon as any} size={18} color={titleColor} />
+          <Text style={[styles.title, { color: done ? colors.accent : partial ? colors.accentMid : colors.textPrimary }]}>
+            {def.label}
+          </Text>
         </View>
-        <LedDot state={done ? 'on' : 'off'} />
+        <LedDot state={ledState} />
       </View>
 
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
 
-      {def.hasNumericInput && (
-        <View style={styles.numericRow}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            onEndEditing={commitValue}
-            onBlur={commitValue}
-            keyboardType="number-pad"
-            placeholder="0"
-            placeholderTextColor={colors.textMuted}
-            style={styles.numericInput}
-          />
-          <Text style={styles.unit}>{def.unit}</Text>
-          {typeof goal === 'number' && (
-            <Text style={styles.goal}>/ {goal} obiettivo</Text>
+      {def.kind === 'numeric' && (
+        <>
+          <View style={styles.numericRow}>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              onEndEditing={commitValue}
+              onBlur={commitValue}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={colors.textMuted}
+              style={styles.numericInput}
+            />
+            <Text style={styles.unit}>{def.unit}</Text>
+            {typeof def.goal === 'number' && <Text style={styles.goal}>/ {def.goal} obiettivo</Text>}
+          </View>
+          {typeof def.goal === 'number' && def.goal > 0 && (
+            <View style={styles.progressWrap}>
+              <ProgressBar percent={(value / def.goal) * 100} />
+            </View>
           )}
-        </View>
+        </>
       )}
 
-      {def.hasNumericInput && typeof goal === 'number' && goal > 0 && (
-        <View style={styles.progressWrap}>
-          <ProgressBar percent={(value / goal) * 100} />
-        </View>
+      {def.kind === 'counter' && (
+        <>
+          <View style={styles.numericRow}>
+            <Text style={styles.counterValue}>{value}</Text>
+            <Text style={styles.unit}>{def.unit}</Text>
+            {typeof def.goal === 'number' && <Text style={styles.goal}>/ {def.goal} obiettivo</Text>}
+          </View>
+          {typeof def.goal === 'number' && def.goal > 0 && (
+            <View style={styles.progressWrap}>
+              <ProgressBar
+                percent={(value / def.goal) * 100}
+                color={done ? colors.accent : partial ? colors.accentMid : colors.accent}
+              />
+            </View>
+          )}
+          <View style={styles.quickAddRow}>
+            {WATER_QUICK_ADD_ML.map((ml) => (
+              <Pressable
+                key={ml}
+                style={({ pressed }) => [styles.quickAddButton, pressed && styles.pressed]}
+                onPress={() => onQuickAdd?.(ml)}
+              >
+                <Text style={styles.quickAddText}>+{ml}ml</Text>
+              </Pressable>
+            ))}
+            <Pressable
+              style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
+              onPress={onReset}
+            >
+              <Ionicons name="refresh-outline" size={14} color={colors.textMuted} />
+            </Pressable>
+          </View>
+        </>
       )}
 
-      <Pressable
-        onPress={onToggleDone}
-        style={({ pressed }) => [
-          styles.toggle,
-          done ? styles.toggleOn : styles.toggleOff,
-          pressed && styles.pressed,
-        ]}
-      >
-        <Text style={[styles.toggleText, done && styles.toggleTextOn]}>
-          {done ? 'COMPLETATO' : 'SEGNA COME FATTO'}
-        </Text>
-      </Pressable>
+      {def.kind !== 'counter' && (
+        <View style={styles.statusRow}>
+          <Pressable
+            onPress={() => onStatusChange(partial ? 'pending' : 'partial')}
+            style={({ pressed }) => [
+              styles.chip,
+              partial && styles.chipPartialActive,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={[styles.chipText, partial && styles.chipTextPartialActive]}>IN CORSO</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onStatusChange(done ? 'pending' : 'done')}
+            style={({ pressed }) => [styles.chip, done && styles.chipDoneActive, pressed && styles.pressed]}
+          >
+            <Text style={[styles.chipText, done && styles.chipTextDoneActive]}>
+              {done ? 'COMPLETATO' : 'FATTO'}
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -96,6 +153,9 @@ const styles = StyleSheet.create({
     borderColor: colors.accentDim,
     backgroundColor: colors.panelAlt,
   },
+  panelPartial: {
+    borderColor: colors.accentMid,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -108,11 +168,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...fonts.body,
-    color: colors.textPrimary,
     fontWeight: '700',
-  },
-  titleDone: {
-    color: colors.accent,
   },
   subtitle: {
     color: colors.textSecondary,
@@ -135,6 +191,12 @@ const styles = StyleSheet.create({
     minWidth: 72,
     fontVariant: ['tabular-nums'],
   },
+  counterValue: {
+    color: colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 18,
+    fontVariant: ['tabular-nums'],
+  },
   unit: {
     color: colors.textMuted,
     fontSize: 12,
@@ -147,28 +209,66 @@ const styles = StyleSheet.create({
   progressWrap: {
     marginTop: -spacing.xs,
   },
-  toggle: {
+  quickAddRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quickAddButton: {
+    flex: 1,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.accentDim,
+    backgroundColor: colors.accentSoft,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  quickAddText: {
+    ...fonts.label,
+    color: colors.accent,
+    fontSize: 11,
+  },
+  resetButton: {
+    width: 36,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  chip: {
+    flex: 1,
     borderRadius: radius.sm,
     paddingVertical: 10,
     alignItems: 'center',
     borderWidth: 1,
-  },
-  toggleOff: {
     borderColor: colors.border,
     backgroundColor: colors.bgAlt,
   },
-  toggleOn: {
+  chipPartialActive: {
+    borderColor: colors.accentMid,
+    backgroundColor: colors.accentMidSoft,
+  },
+  chipDoneActive: {
     borderColor: colors.accent,
     backgroundColor: colors.accentSoft,
   },
   pressed: {
     opacity: 0.7,
   },
-  toggleText: {
+  chipText: {
     ...fonts.label,
     color: colors.textSecondary,
+    fontSize: 10,
   },
-  toggleTextOn: {
+  chipTextPartialActive: {
+    color: colors.accentMid,
+  },
+  chipTextDoneActive: {
     color: colors.accent,
   },
 });
