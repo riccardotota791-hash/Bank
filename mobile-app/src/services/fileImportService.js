@@ -3,7 +3,7 @@ import { File } from 'expo-file-system';
 import { getCategoriesByType } from '../db/categoriesRepo';
 import { addPendingImport } from '../db/pendingImportRepo';
 import { findSimilarTransactions } from '../db/transactionsRepo';
-import { parseDateValue, parseAmountValue, shortHash, textsLookSimilar } from '../utils/importParsing';
+import { parseDateValue, parseAmountValue, shortHash } from '../utils/importParsing';
 import { guessCategoryName } from '../utils/categoryGuess';
 
 export { looksLikeHeaderRow } from '../utils/importParsing';
@@ -76,8 +76,18 @@ function resolveCategoryId(type, { categoryText, description }, categoriesByType
  * Trasforma le righe grezze del foglio (esclusa l'intestazione) in movimenti
  * candidati usando la mappatura di colonne scelta dall'utente, poi crea una
  * proposta "da confermare" per ogni riga che non risulti già presente né tra
- * i movimenti reali (stessa data+importo+tipo E descrizione simile) né tra
- * le proposte in sospeso di un import precedente.
+ * i movimenti reali né tra le proposte in sospeso di un import precedente.
+ *
+ * Il confronto duplicati si basa su data + importo + tipo: nella pratica la
+ * descrizione del testo bancario ("PAGAMENTO POS ESSELUNGA...") quasi mai
+ * coincide con la nota che l'utente ha scritto a mano o importato in
+ * precedenza (es. "Spesa settimanale"), quindi richiedere anche la
+ * somiglianza testuale fa perdere duplicati veri. Per non scartare per
+ * errore due spese diverse ma con stesso importo lo stesso giorno, ogni
+ * movimento reale esistente "copre" al massimo una riga del file: se il
+ * file ne contiene più di quante ce ne sono già in archivio con quella
+ * combinazione data+importo+tipo, le righe in eccesso sono considerate
+ * nuove.
  */
 export async function importMappedRows({ rows, mapping, sourceLabel }) {
   const expenseCategories = await getCategoriesByType('expense');
@@ -91,6 +101,7 @@ export async function importMappedRows({ rows, mapping, sourceLabel }) {
   let imported = 0;
   let skippedDuplicate = 0;
   let skippedInvalid = 0;
+  const consumedMatches = new Map();
 
   for (const row of rows) {
     const dateRaw = row[mapping.dateCol];
@@ -125,9 +136,11 @@ export async function importMappedRows({ rows, mapping, sourceLabel }) {
     const categoryText = mapping.categoryCol != null ? String(row[mapping.categoryCol] ?? '').trim() : '';
     const externalId = `file:${sourceLabel}:${date}:${type}:${amount.toFixed(2)}:${shortHash(description)}`;
 
+    const key = `${date}|${type}|${amount.toFixed(2)}`;
     const candidates = await findSimilarTransactions({ date, type, amount });
-    const isDuplicate = candidates.some((c) => textsLookSimilar(c.note, description));
-    if (isDuplicate) {
+    const alreadyConsumed = consumedMatches.get(key) || 0;
+    if (alreadyConsumed < candidates.length) {
+      consumedMatches.set(key, alreadyConsumed + 1);
       skippedDuplicate += 1;
       continue;
     }
