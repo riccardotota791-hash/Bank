@@ -8,7 +8,7 @@ import HealthGauge from '../components/HealthGauge';
 import AdviceCard from '../components/AdviceCard';
 import TransactionRow from '../components/TransactionRow';
 import { useApp } from '../context/AppContext';
-import { getMonthlyReport } from '../services/reportService';
+import { getMonthlyReport, getTotalSaved } from '../services/reportService';
 import { getRecentTransactions, getYearTotals } from '../db/transactionsRepo';
 import { COLORS, SPACING, FONT, RADIUS } from '../constants/theme';
 import { formatEuro, currentFinancialMonthKey } from '../utils/formatters';
@@ -18,21 +18,25 @@ export default function HomeScreen({ navigation }) {
   const [report, setReport] = useState(null);
   const [recent, setRecent] = useState([]);
   const [yearTotals, setYearTotals] = useState({ net: 0 });
+  const [totalSaved, setTotalSaved] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const monthKey = currentFinancialMonthKey(settings?.payday ?? 27);
-    const [rep, recentTx, year] = await Promise.all([
+    const payday = settings?.payday ?? 27;
+    const monthKey = currentFinancialMonthKey(payday);
+    const [rep, recentTx, year, saved] = await Promise.all([
       getMonthlyReport(monthKey),
       getRecentTransactions(5),
       getYearTotals(new Date().getFullYear()),
+      getTotalSaved(payday, settings?.initialSavings ?? 0),
     ]);
     setReport(rep);
     setRecent(recentTx);
     setYearTotals(year);
+    setTotalSaved(saved);
     setLoading(false);
-  }, [settings?.payday]);
+  }, [settings?.payday, settings?.initialSavings]);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,6 +78,15 @@ export default function HomeScreen({ navigation }) {
           savingsRatePct={report.savingsRatePct}
           targetPct={report.targetPct}
         />
+
+        <Card style={styles.totalSavedCard}>
+          <Text style={styles.totalSavedLabel}>Totale risparmiato</Text>
+          <Text style={styles.totalSavedValue}>{formatEuro(totalSaved)}</Text>
+          <Text style={styles.totalSavedHint}>
+            Somma di tutti i mesi risparmiati{settings?.initialSavings ? ' + risparmio iniziale impostato' : ''} ·
+            modificabile in Impostazioni
+          </Text>
+        </Card>
 
         <View style={styles.yearRow}>
           <View style={styles.yearBlock}>
@@ -151,6 +164,27 @@ const styles = StyleSheet.create({
     fontSize: FONT.h1,
     fontWeight: '800',
     color: COLORS.textPrimary,
+  },
+  totalSavedCard: {
+    alignItems: 'center',
+    marginTop: SPACING.lg,
+  },
+  totalSavedLabel: {
+    fontSize: FONT.small,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  totalSavedValue: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginTop: 4,
+  },
+  totalSavedHint: {
+    fontSize: FONT.tiny,
+    color: COLORS.textMuted,
+    marginTop: 4,
+    textAlign: 'center',
   },
   yearRow: {
     flexDirection: 'row',

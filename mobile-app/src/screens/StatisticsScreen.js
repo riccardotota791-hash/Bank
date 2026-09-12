@@ -27,7 +27,7 @@ export default function StatisticsScreen() {
     const [trendData, pie, basis, ySummary] = await Promise.all([
       getYearlyTrend(monthKey, payday),
       getCategoryPieData(monthKey, payday),
-      getProjectionBasis(monthKey, payday),
+      getProjectionBasis(monthKey, payday, settings?.initialSavings ?? 0),
       getYearSummary(year),
     ]);
     setTrend(trendData);
@@ -37,7 +37,7 @@ export default function StatisticsScreen() {
     const rate = settings?.investmentReturnRate || 6;
     setProjections(projectWealth(basis.avgMonthly, rate, [1, 5, 10, 20], basis.startingCapital));
     setLoading(false);
-  }, [settings?.investmentReturnRate, settings?.payday]);
+  }, [settings?.investmentReturnRate, settings?.payday, settings?.initialSavings]);
 
   useFocusEffect(
     useCallback(() => {

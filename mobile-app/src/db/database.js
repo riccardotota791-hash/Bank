@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = {
   payday: '27',
   savings_target_pct: '40',
   investment_return_rate: '6',
+  initial_savings: '0',
   notifications_enabled: 'true',
   weekly_reminder_enabled: 'true',
   weekly_reminder_weekday: '1', // 1 = lunedì

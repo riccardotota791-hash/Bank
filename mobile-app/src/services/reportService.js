@@ -140,7 +140,7 @@ export async function getCategoryPieData(monthKey, payday = 27, type = 'expense'
  * medio recente (ciò che verrebbe investito con costanza ogni mese) e
  * capitale già accumulato finora (base di partenza della capitalizzazione).
  */
-export async function getProjectionBasis(monthKey, payday = 27) {
+export async function getProjectionBasis(monthKey, payday = 27, initialSavings = 0) {
   const keysWithData = await recentAvailableMonthKeys(monthKey, payday, 6);
   const keysToAverage = keysWithData.length > 0 ? keysWithData : [monthKey];
 
@@ -148,11 +148,22 @@ export async function getProjectionBasis(monthKey, payday = 27) {
   for (const key of keysToAverage) nets.push((await getTotalsForRange(getFinancialPeriodRange(key, payday))).net);
   const avgMonthly = Math.max(0, average(nets));
 
-  const allMonths = await getAvailableMonths(payday);
-  let startingCapital = 0;
-  for (const key of allMonths) startingCapital += (await getTotalsForRange(getFinancialPeriodRange(key, payday))).net;
+  const startingCapital = await getTotalSaved(payday, initialSavings);
 
-  return { avgMonthly, startingCapital: Math.max(0, startingCapital) };
+  return { avgMonthly, startingCapital };
+}
+
+/**
+ * Totale risparmiato "di sempre": il risparmio già accumulato prima di
+ * iniziare a usare l'app (impostazione manuale) più la somma del netto di
+ * ogni mese finanziario tracciato da allora — cresce da solo ogni mese man
+ * mano che passano nuovi periodi.
+ */
+export async function getTotalSaved(payday = 27, initialSavings = 0) {
+  const allMonths = await getAvailableMonths(payday);
+  let total = initialSavings;
+  for (const key of allMonths) total += (await getTotalsForRange(getFinancialPeriodRange(key, payday))).net;
+  return Math.max(0, total);
 }
 
 /**

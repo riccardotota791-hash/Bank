@@ -31,6 +31,7 @@ function normalizeSettings(raw) {
     payday: Number(raw.payday),
     savingsTargetPct: Number(raw.savings_target_pct),
     investmentReturnRate: Number(raw.investment_return_rate),
+    initialSavings: Number(raw.initial_savings),
     notificationsEnabled: raw.notifications_enabled === 'true',
     weeklyReminderEnabled: raw.weekly_reminder_enabled === 'true',
     weeklyReminderWeekday: Number(raw.weekly_reminder_weekday),

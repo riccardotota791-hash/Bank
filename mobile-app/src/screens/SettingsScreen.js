@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Switch, Pressable, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, ScrollView, Switch, Pressable, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, Card, SectionTitle, DangerButton } from '../components/UI';
 import { useApp } from '../context/AppContext';
@@ -12,8 +12,11 @@ const WEEKDAYS = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', '
 export default function SettingsScreen({ navigation }) {
   const { settings, updateSetting, refresh } = useApp();
   const [resetting, setResetting] = useState(false);
+  const [initialSavingsInput, setInitialSavingsInput] = useState(null);
 
   if (!settings) return null;
+
+  const initialSavingsValue = initialSavingsInput ?? String(settings.initialSavings || 0).replace('.', ',');
 
   const handleToggle = async (key, value) => {
     await updateSetting(key, value ? 'true' : 'false');
@@ -33,6 +36,13 @@ export default function SettingsScreen({ navigation }) {
   const handlePaydayChange = async (delta) => {
     const next = Math.max(1, Math.min(28, settings.payday + delta));
     await updateSetting('payday', next);
+  };
+
+  const handleInitialSavingsCommit = async () => {
+    const parsed = parseFloat(initialSavingsInput?.replace(',', '.'));
+    const next = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+    await updateSetting('initial_savings', next);
+    setInitialSavingsInput(null);
   };
 
   const handleReset = () => {
@@ -85,6 +95,25 @@ export default function SettingsScreen({ navigation }) {
             onDecrease={() => handleRateChange(-0.5)}
             onIncrease={() => handleRateChange(0.5)}
           />
+          <View style={styles.divider} />
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>Risparmio già accumulato</Text>
+              <Text style={styles.settingHint}>Da prima di usare l'app: si somma al risparmio calcolato mese per mese</Text>
+            </View>
+            <View style={styles.amountInputWrap}>
+              <Text style={styles.amountPrefix}>€</Text>
+              <TextInput
+                style={styles.amountInput}
+                value={initialSavingsValue}
+                onChangeText={setInitialSavingsInput}
+                onEndEditing={handleInitialSavingsCommit}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={COLORS.textMuted}
+              />
+            </View>
+          </View>
         </Card>
 
         <SectionTitle style={{ marginTop: SPACING.lg }}>Notifiche</SectionTitle>
@@ -240,6 +269,29 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     minWidth: 46,
     textAlign: 'center',
+  },
+  amountInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.sm,
+  },
+  amountPrefix: {
+    fontSize: FONT.body,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  amountInput: {
+    fontSize: FONT.body,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    minWidth: 70,
+    textAlign: 'right',
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.xs,
   },
   aboutBlock: {
     marginTop: SPACING.xl,
