@@ -104,7 +104,21 @@ Expo Go potrebbe non completarsi per via delle limitazioni sui redirect URI
 dei client OAuth "installed app". Tutto il resto dell'app, incluso
 l'inserimento manuale rapido, funziona sempre perfettamente in Expo Go.
 
-## Struttura del progetto
+## Importazione semi-automatica da file (Excel/CSV)
+
+Da **Impostazioni → Importa da file (Excel/CSV)** puoi scegliere il file
+con l'estratto conto/elenco movimenti scaricato dall'app della tua banca
+(es. IsyBank, Intesa Sanpaolo, ecc.). Non c'è un formato fisso richiesto:
+dopo aver scelto il file, l'app mostra un'anteprima delle prime righe e ti
+chiede di indicare quale colonna contiene la data, quale l'importo (o le
+due colonne separate Entrate/Uscite) e, opzionalmente, quale la
+descrizione. In base a questa mappatura, riconosce solo le operazioni non
+già presenti (confrontando data + importo + tipo con i movimenti esistenti
+e con eventuali import precedenti) e le propone da confermare con uno
+swipe nella tab **Movimenti**, esattamente come per l'import da Gmail —
+nessun movimento viene inserito automaticamente senza conferma.
+
+## Collegamento Gmail (opzionale)
 
 ```
 mobile-app/

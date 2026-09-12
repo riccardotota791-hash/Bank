@@ -119,6 +119,13 @@ export default function SettingsScreen({ navigation }) {
             hint={settings.gmailConnected ? 'Connesso' : 'Non connesso — inserimento manuale attivo'}
             onPress={() => navigation.navigate('GmailSetup')}
           />
+          <View style={styles.divider} />
+          <NavRow
+            icon="document-outline"
+            label="Importa da file (Excel/CSV)"
+            hint="Estratto conto scaricato dall'app della banca"
+            onPress={() => navigation.navigate('ImportFile')}
+          />
         </Card>
 
         <SectionTitle style={{ marginTop: SPACING.lg }}>Personalizzazione</SectionTitle>

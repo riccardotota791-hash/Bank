@@ -27,12 +27,12 @@ export default function TransactionsScreen({ navigation }) {
     const [tx, tot, pend] = await Promise.all([
       getTransactionsByRange(range),
       getTotalsForRange(range),
-      settings?.gmailConnected ? getPendingImports() : Promise.resolve([]),
+      getPendingImports(),
     ]);
     setTransactions(tx);
     setTotals(tot);
     setPending(pend);
-  }, [range.start, range.end, settings?.gmailConnected]);
+  }, [range.start, range.end]);
 
   useFocusEffect(
     useCallback(() => {

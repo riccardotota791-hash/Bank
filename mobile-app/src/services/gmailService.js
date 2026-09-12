@@ -80,13 +80,14 @@ export async function syncGmail() {
 }
 
 export async function confirmImport(pendingItem) {
+  const source = pendingItem.gmail_message_id?.startsWith('file:') ? 'file_import' : 'gmail';
   await addTransaction({
     amount: pendingItem.amount,
     type: pendingItem.suggested_type,
     category_id: pendingItem.suggested_category_id,
     note: pendingItem.merchant,
     date: pendingItem.date,
-    source: 'gmail',
+    source,
   });
   await resolvePendingImport(pendingItem.id, 'confirmed');
 }
