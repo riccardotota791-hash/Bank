@@ -6,6 +6,7 @@ import { COLORS } from '../constants/theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
+import SearchTransactionsScreen from '../screens/SearchTransactionsScreen';
 import AdviceScreen from '../screens/AdviceScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import MonthDetailScreen from '../screens/MonthDetailScreen';
@@ -42,6 +43,7 @@ function TransactionsStackNavigator() {
   return (
     <TransactionsStack.Navigator screenOptions={stackScreenOptions}>
       <TransactionsStack.Screen name="TransactionsMain" component={TransactionsScreen} options={{ headerShown: false }} />
+      <TransactionsStack.Screen name="SearchTransactions" component={SearchTransactionsScreen} options={{ title: 'Cerca movimenti' }} />
     </TransactionsStack.Navigator>
   );
 }

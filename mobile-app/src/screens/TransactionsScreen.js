@@ -53,7 +53,12 @@ export default function TransactionsScreen({ navigation }) {
   return (
     <ScreenContainer>
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Movimenti</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Movimenti</Text>
+          <Pressable style={styles.searchBtn} onPress={() => navigation.navigate('SearchTransactions')}>
+            <Ionicons name="search-outline" size={22} color={COLORS.primary} />
+          </Pressable>
+        </View>
         <MonthSelector monthKey={monthKey} onChange={setMonthKey} />
         <Text style={styles.periodLabel}>
           {formatRangeLabel(range)}
@@ -116,10 +121,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: FONT.h1,
     fontWeight: '800',
     color: COLORS.textPrimary,
+  },
+  searchBtn: {
+    padding: SPACING.xs,
   },
   periodLabel: {
     fontSize: FONT.tiny,

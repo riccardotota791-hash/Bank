@@ -139,6 +139,68 @@ export async function getYearTotals(year) {
   return totals;
 }
 
+/**
+ * Ricerca libera sull'intera cronologia (non limitata al periodo
+ * finanziario corrente): testo su nota/categoria, tipo, categoria,
+ * intervallo di importo e intervallo di date, tutti opzionali e
+ * combinabili. Usata dalla schermata di ricerca/filtro dei movimenti.
+ */
+export async function searchTransactions({
+  text = '',
+  type = null,
+  categoryId = null,
+  minAmount = null,
+  maxAmount = null,
+  startDate = null,
+  endDate = null,
+  limit = 300,
+} = {}) {
+  const db = await getDb();
+  const clauses = [];
+  const params = [];
+
+  const trimmedText = text.trim();
+  if (trimmedText) {
+    clauses.push('(t.note LIKE ? OR c.name LIKE ?)');
+    const like = `%${trimmedText}%`;
+    params.push(like, like);
+  }
+  if (type) {
+    clauses.push('t.type = ?');
+    params.push(type);
+  }
+  if (categoryId != null) {
+    clauses.push('t.category_id = ?');
+    params.push(categoryId);
+  }
+  if (minAmount != null) {
+    clauses.push('t.amount >= ?');
+    params.push(minAmount);
+  }
+  if (maxAmount != null) {
+    clauses.push('t.amount <= ?');
+    params.push(maxAmount);
+  }
+  if (startDate) {
+    clauses.push('t.date >= ?');
+    params.push(startDate);
+  }
+  if (endDate) {
+    clauses.push('t.date <= ?');
+    params.push(endDate);
+  }
+
+  const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+  return db.getAllAsync(
+    `SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
+     FROM transactions t LEFT JOIN categories c ON c.id = t.category_id
+     ${where}
+     ORDER BY t.date DESC, t.id DESC
+     LIMIT ?`,
+    [...params, limit]
+  );
+}
+
 export async function getFirstTransactionDate() {
   const db = await getDb();
   const row = await db.getFirstAsync('SELECT MIN(date) as minDate FROM transactions');
