@@ -1,29 +1,6 @@
 // Parser euristico di ricevute/notifiche bancarie via email. Best-effort:
 // ogni suggerimento va sempre confermato con lo swipe dall'utente.
-
-const CATEGORY_KEYWORDS = {
-  'Cibo e spesa': ['esselunga', 'coop', 'conad', 'carrefour', 'lidl', 'eurospin', 'supermercato', 'ristorante', 'pizzeria', 'deliveroo', 'glovo', 'justeat', 'just eat', 'bar '],
-  'Trasporti': ['trenitalia', 'italo', 'atm milano', 'gtt', 'atac', 'uber', 'taxi', 'benzina', 'eni', 'q8', 'autostrade', 'telepass', 'ryanair', 'easyjet'],
-  'Svago': ['cinema', 'concerto', 'steam', 'playstation', 'xbox', 'ticketone', 'eventbrite'],
-  'Abbonamenti': ['netflix', 'spotify', 'amazon prime', 'disney+', 'disney plus', 'youtube premium', 'apple music', 'dazn', 'nowtv', 'now tv'],
-  'Salute': ['farmacia', 'parafarmacia', 'ambulatorio', 'dott.', 'dottor', 'clinica'],
-  'Formazione': ['udemy', 'coursera', 'libreria', 'libro', 'corso'],
-};
-
-const INCOME_KEYWORDS = ['accredito', 'stipendio', 'bonifico ricevuto', 'hai ricevuto', 'ricevuto un pagamento', 'payment received'];
-
-export function guessCategoryName(text) {
-  const lower = text.toLowerCase();
-  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (keywords.some((k) => lower.includes(k))) return category;
-  }
-  return 'Altro';
-}
-
-export function guessType(text) {
-  const lower = text.toLowerCase();
-  return INCOME_KEYWORDS.some((k) => lower.includes(k)) ? 'income' : 'expense';
-}
+import { guessCategoryName, guessType } from '../utils/categoryGuess';
 
 export function extractAmount(text) {
   const match = text.match(/(?:€|EUR)\s?([\d]{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)|([\d]{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s?(?:€|EUR)/i);

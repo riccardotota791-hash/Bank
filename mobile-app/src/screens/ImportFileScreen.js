@@ -26,6 +26,7 @@ export default function ImportFileScreen({ navigation }) {
   const [outCol, setOutCol] = useState(null);
   const [inCol, setInCol] = useState(null);
   const [descCol, setDescCol] = useState(null);
+  const [categoryCol, setCategoryCol] = useState(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
 
@@ -43,6 +44,7 @@ export default function ImportFileScreen({ navigation }) {
     setOutCol(null);
     setInCol(null);
     setDescCol(null);
+    setCategoryCol(null);
     try {
       const rows = await readSpreadsheetRows(asset.uri);
       if (!rows || rows.length === 0) {
@@ -69,7 +71,10 @@ export default function ImportFileScreen({ navigation }) {
   const handleImport = async () => {
     setImporting(true);
     try {
-      const mapping = mode === 'signed' ? { mode, dateCol, amountCol, descCol } : { mode, dateCol, outCol, inCol, descCol };
+      const mapping =
+        mode === 'signed'
+          ? { mode, dateCol, amountCol, descCol, categoryCol }
+          : { mode, dateCol, outCol, inCol, descCol, categoryCol };
       const stats = await importMappedRows({ rows: dataRows, mapping, sourceLabel: fileName || 'file' });
       refresh();
       Alert.alert(
@@ -162,6 +167,14 @@ export default function ImportFileScreen({ navigation }) {
 
               <Text style={styles.fieldLabel}>Colonna Descrizione (opzionale, diventa la nota)</Text>
               <ColumnChips columns={columns} selected={descCol} onSelect={setDescCol} />
+
+              <Text style={styles.fieldLabel}>Colonna Categoria (opzionale, se il file la indica già)</Text>
+              <ColumnChips columns={columns} selected={categoryCol} onSelect={setCategoryCol} />
+              <Text style={styles.hint}>
+                Se non la mappi, o non trovo corrispondenza, provo comunque a indovinare la categoria dalla
+                descrizione (supermercati, ristoranti, trasporti, abbonamenti...); altrimenti resta "Altro" e la
+                sistemi tu dopo aver confermato il movimento.
+              </Text>
             </View>
 
             <PrimaryButton
@@ -207,6 +220,12 @@ const styles = StyleSheet.create({
     fontSize: FONT.small,
     color: COLORS.textSecondary,
     lineHeight: 20,
+  },
+  hint: {
+    fontSize: FONT.tiny,
+    color: COLORS.textMuted,
+    lineHeight: 16,
+    marginTop: -SPACING.xs,
   },
   fieldLabel: {
     fontSize: FONT.small,

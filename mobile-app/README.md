@@ -111,12 +111,23 @@ con l'estratto conto/elenco movimenti scaricato dall'app della tua banca
 (es. IsyBank, Intesa Sanpaolo, ecc.). Non c'è un formato fisso richiesto:
 dopo aver scelto il file, l'app mostra un'anteprima delle prime righe e ti
 chiede di indicare quale colonna contiene la data, quale l'importo (o le
-due colonne separate Entrate/Uscite) e, opzionalmente, quale la
-descrizione. In base a questa mappatura, riconosce solo le operazioni non
-già presenti (confrontando data + importo + tipo con i movimenti esistenti
-e con eventuali import precedenti) e le propone da confermare con uno
-swipe nella tab **Movimenti**, esattamente come per l'import da Gmail —
-nessun movimento viene inserito automaticamente senza conferma.
+due colonne separate Entrate/Uscite), e opzionalmente quale la
+descrizione e quale la categoria (se il file la indica già).
+
+- **Duplicati**: una riga viene considerata già presente solo se esiste un
+  movimento con stessa data, stesso importo, stesso tipo *e* descrizione
+  uguale o simile — così due spese diverse ma con lo stesso importo lo
+  stesso giorno (es. due caffè) non vengono scartate per errore.
+- **Categoria**: se mappi la colonna Categoria del file, prova prima quella;
+  altrimenti (o se non trova corrispondenza) riconosce la categoria dalla
+  descrizione tramite parole chiave (supermercati, ristoranti, trasporti,
+  abbonamenti, farmacie, ecc.) — la stessa logica usata per l'import Gmail.
+  Solo se non riconosce nulla resta "Altro", da sistemare a mano dopo.
+
+Le operazioni riconosciute come nuove finiscono nella tab **Movimenti →
+"Da confermare"**, dove le confermi/rifiuti con uno swipe (stesso
+meccanismo dell'import da Gmail): nessun movimento viene inserito
+automaticamente senza la tua conferma.
 
 ## Collegamento Gmail (opzionale)
 

@@ -19,18 +19,19 @@ export async function updateTransaction(id, { amount, type, category_id, note, d
 }
 
 /**
- * Vero se esiste già un movimento con la stessa data, tipo e importo
- * (tolleranza 1 centesimo). Usato dagli importatori (Excel/CSV) per
- * evitare di riproporre come "nuove" operazioni già inserite a mano o
- * da un import precedente.
+ * Movimenti già esistenti con la stessa data, tipo e importo (tolleranza 1
+ * centesimo) — candidati per il controllo duplicati degli importatori
+ * (Excel/CSV): la nota di ciascuno va poi confrontata con la descrizione
+ * della riga da importare, perché data+importo uguali da soli non bastano
+ * a distinguere due spese diverse ma coincidenti (es. due caffè da 1,20€
+ * lo stesso giorno).
  */
-export async function transactionExistsSimilar({ date, type, amount }) {
+export async function findSimilarTransactions({ date, type, amount }) {
   const db = await getDb();
-  const row = await db.getFirstAsync(
-    'SELECT id FROM transactions WHERE date = ? AND type = ? AND ABS(amount - ?) < 0.01 LIMIT 1',
+  return db.getAllAsync(
+    'SELECT id, note FROM transactions WHERE date = ? AND type = ? AND ABS(amount - ?) < 0.01',
     [date, type, amount]
   );
-  return !!row;
 }
 
 export async function deleteTransaction(id) {

@@ -2,8 +2,9 @@ import * as XLSX from 'xlsx';
 import { File } from 'expo-file-system';
 import { getCategoriesByType } from '../db/categoriesRepo';
 import { addPendingImport } from '../db/pendingImportRepo';
-import { transactionExistsSimilar } from '../db/transactionsRepo';
-import { parseDateValue, parseAmountValue, shortHash } from '../utils/importParsing';
+import { findSimilarTransactions } from '../db/transactionsRepo';
+import { parseDateValue, parseAmountValue, shortHash, textsLookSimilar } from '../utils/importParsing';
+import { guessCategoryName } from '../utils/categoryGuess';
 
 export { looksLikeHeaderRow } from '../utils/importParsing';
 
@@ -41,16 +42,51 @@ function extractRows(workbook) {
 }
 
 /**
+ * Sceglie la categoria più adatta per una riga importata: prova prima il
+ * testo della colonna Categoria del file (se mappata), poi la descrizione,
+ * riconoscendo parole chiave (supermercati, ristoranti, trasporti, ...).
+ * Se nessuna corrisponde, usa una categoria generica di riserva.
+ */
+function resolveCategoryId(type, { categoryText, description }, categoriesByType, fallbackByName) {
+  const categories = categoriesByType[type] || [];
+
+  const byExactName = (text) => {
+    if (!text) return null;
+    const normalized = text.trim().toLowerCase();
+    return categories.find((c) => c.name.toLowerCase() === normalized)?.id ?? null;
+  };
+
+  const byKeyword = (text) => {
+    if (!text) return null;
+    const guessedName = guessCategoryName(text);
+    if (guessedName === 'Altro') return null;
+    return categories.find((c) => c.name === guessedName)?.id ?? null;
+  };
+
+  return (
+    byExactName(categoryText) ??
+    byKeyword(categoryText) ??
+    byKeyword(description) ??
+    fallbackByName[type] ??
+    null
+  );
+}
+
+/**
  * Trasforma le righe grezze del foglio (esclusa l'intestazione) in movimenti
  * candidati usando la mappatura di colonne scelta dall'utente, poi crea una
  * proposta "da confermare" per ogni riga che non risulti già presente né tra
- * i movimenti reali né tra le proposte in sospeso.
+ * i movimenti reali (stessa data+importo+tipo E descrizione simile) né tra
+ * le proposte in sospeso di un import precedente.
  */
 export async function importMappedRows({ rows, mapping, sourceLabel }) {
   const expenseCategories = await getCategoriesByType('expense');
   const incomeCategories = await getCategoriesByType('income');
-  const defaultExpenseCategoryId = expenseCategories.find((c) => c.name === 'Altro')?.id ?? expenseCategories[0]?.id ?? null;
-  const defaultIncomeCategoryId = incomeCategories.find((c) => c.name === 'Altre entrate')?.id ?? incomeCategories[0]?.id ?? null;
+  const categoriesByType = { expense: expenseCategories, income: incomeCategories };
+  const fallbackByName = {
+    expense: expenseCategories.find((c) => c.name === 'Altro')?.id ?? expenseCategories[0]?.id ?? null,
+    income: incomeCategories.find((c) => c.name === 'Altre entrate')?.id ?? incomeCategories[0]?.id ?? null,
+  };
 
   let imported = 0;
   let skippedDuplicate = 0;
@@ -86,20 +122,22 @@ export async function importMappedRows({ rows, mapping, sourceLabel }) {
     }
 
     const description = mapping.descCol != null ? String(row[mapping.descCol] ?? '').trim() : '';
+    const categoryText = mapping.categoryCol != null ? String(row[mapping.categoryCol] ?? '').trim() : '';
     const externalId = `file:${sourceLabel}:${date}:${type}:${amount.toFixed(2)}:${shortHash(description)}`;
 
-    const alreadyReal = await transactionExistsSimilar({ date, type, amount });
-    if (alreadyReal) {
+    const candidates = await findSimilarTransactions({ date, type, amount });
+    const isDuplicate = candidates.some((c) => textsLookSimilar(c.note, description));
+    if (isDuplicate) {
       skippedDuplicate += 1;
       continue;
     }
 
-    const categoryId = type === 'expense' ? defaultExpenseCategoryId : defaultIncomeCategoryId;
+    const categoryId = resolveCategoryId(type, { categoryText, description }, categoriesByType, fallbackByName);
     const result = await addPendingImport({
       amount,
       suggested_type: type,
       suggested_category_id: categoryId,
-      merchant: description || null,
+      merchant: description || categoryText || null,
       raw_snippet: description,
       date,
       gmail_message_id: externalId,
