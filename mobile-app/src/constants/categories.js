@@ -15,6 +15,7 @@ export const DEFAULT_CATEGORIES = [
 
   // Uscite (mai casa/affitto/mutuo/bollette)
   { name: 'Trasporti', type: 'expense', icon: 'car-outline', color: '#2E86AB', monthly_budget: 100 },
+  { name: 'Assicurazione macchina', type: 'expense', icon: 'shield-checkmark-outline', color: '#3B6E8F', monthly_budget: 60 },
   { name: 'Spesa alimentare', type: 'expense', icon: 'basket-outline', color: '#E08E45', monthly_budget: 250 },
   { name: 'Ristoranti e bar', type: 'expense', icon: 'restaurant-outline', color: '#C2554F', monthly_budget: 100 },
   { name: 'Svago e tempo libero', type: 'expense', icon: 'game-controller-outline', color: '#8E5FB0', monthly_budget: 120 },

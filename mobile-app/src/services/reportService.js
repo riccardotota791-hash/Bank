@@ -171,14 +171,16 @@ export async function getTotalSaved(payday = 27, initialSavings = 0) {
 /**
  * Dati per la sezione "Regole d'oro": split 50/30/20 sul reddito del
  * periodo corrente e obiettivo di fondo di emergenza (3-6 mesi di
- * bisogni primari: Trasporti + Spesa alimentare), calcolato sulla media
- * degli ultimi mesi finanziari disponibili (fino a 6).
+ * bisogni primari: Trasporti + Assicurazione macchina + Spesa alimentare),
+ * calcolato sulla media degli ultimi mesi finanziari disponibili (fino a 6).
  */
 export async function getGoldenRulesData(monthKey, payday = 27) {
   const totals = await getTotalsForRange(getFinancialPeriodRange(monthKey, payday));
 
   const expenseCategories = await getCategoriesByType('expense');
-  const essentialCategories = expenseCategories.filter((c) => ['Trasporti', 'Spesa alimentare'].includes(c.name));
+  const essentialCategories = expenseCategories.filter((c) =>
+    ['Trasporti', 'Assicurazione macchina', 'Spesa alimentare'].includes(c.name)
+  );
 
   const keysWithData = await recentAvailableMonthKeys(monthKey, payday, 6);
   const ranges = (keysWithData.length > 0 ? keysWithData : [monthKey]).map((key) => getFinancialPeriodRange(key, payday));

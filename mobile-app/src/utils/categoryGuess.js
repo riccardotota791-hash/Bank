@@ -7,7 +7,11 @@ const CATEGORY_KEYWORDS = {
   Trasporti: [
     'trenitalia', 'italo', 'atm milano', 'gtt', 'atac', 'uber', 'taxi', 'benzina', 'carburante',
     'eni', 'q8', 'ip ', 'esso', 'autostrade', 'telepass', 'ryanair', 'easyjet', 'parcheggio',
-    'parking', 'autogrill', 'bus ', 'treno', 'metro', 'ncc', 'assicurazione macchina', 'assicurazione auto',
+    'parking', 'autogrill', 'bus ', 'treno', 'metro', 'ncc',
+  ],
+  'Assicurazione macchina': [
+    'assicurazione macchina', 'assicurazione auto', 'rc auto', 'rca ', 'polizza auto',
+    'genertel', 'genialloyd', 'linear assicurazioni', 'direct line', 'unipol', 'allianz auto',
   ],
   'Spesa alimentare': [
     'esselunga', 'coop', 'conad', 'carrefour', 'lidl', 'eurospin', 'supermercato', 'alimentari',

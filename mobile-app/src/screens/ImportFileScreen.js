@@ -15,6 +15,13 @@ const FILE_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
+// Mappatura predefinita per il formato di file abitualmente usato: colonna 1
+// data, colonna 2 nota, colonna 6 categoria, colonna 8 importo (indici a
+// base 0). Applicata in automatico se il file ha abbastanza colonne;
+// resta comunque modificabile a mano per file con un formato diverso.
+const DEFAULT_MAPPING = { dateCol: 0, descCol: 1, categoryCol: 5, amountCol: 7 };
+const DEFAULT_MAPPING_MIN_COLUMNS = 8;
+
 export default function ImportFileScreen({ navigation }) {
   const { refresh } = useApp();
   const [fileName, setFileName] = useState(null);
@@ -27,6 +34,7 @@ export default function ImportFileScreen({ navigation }) {
   const [inCol, setInCol] = useState(null);
   const [descCol, setDescCol] = useState(null);
   const [categoryCol, setCategoryCol] = useState(null);
+  const [autoMapped, setAutoMapped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
 
@@ -45,6 +53,7 @@ export default function ImportFileScreen({ navigation }) {
     setInCol(null);
     setDescCol(null);
     setCategoryCol(null);
+    setAutoMapped(false);
     try {
       const rows = await readSpreadsheetRows(asset.uri);
       if (!rows || rows.length === 0) {
@@ -58,6 +67,15 @@ export default function ImportFileScreen({ navigation }) {
         : Array.from({ length: width }, (_, i) => `Colonna ${i + 1}`);
       setColumns(labels);
       setDataRows(hasHeader ? rows.slice(1) : rows);
+
+      if (width >= DEFAULT_MAPPING_MIN_COLUMNS) {
+        setMode('signed');
+        setDateCol(DEFAULT_MAPPING.dateCol);
+        setDescCol(DEFAULT_MAPPING.descCol);
+        setCategoryCol(DEFAULT_MAPPING.categoryCol);
+        setAmountCol(DEFAULT_MAPPING.amountCol);
+        setAutoMapped(true);
+      }
     } catch (e) {
       Alert.alert('Errore lettura file', "Non riesco a leggere questo file. Assicurati sia un vero Excel (.xlsx) o CSV esportato dall'app della banca.");
       setFileName(null);
@@ -138,6 +156,12 @@ export default function ImportFileScreen({ navigation }) {
 
             <View style={{ marginTop: SPACING.xl }}>
               <SectionTitle subtitle="Dimmi quale colonna contiene cosa">Mappatura colonne</SectionTitle>
+              {autoMapped ? (
+                <Text style={[styles.hint, { marginBottom: SPACING.sm }]}>
+                  Precompilata con la tua mappatura abituale (1 data, 2 nota, 6 categoria, 8 importo) — controllala e
+                  correggila se questo file è diverso dal solito.
+                </Text>
+              ) : null}
 
               <Text style={styles.fieldLabel}>Colonna Data</Text>
               <ColumnChips columns={columns} selected={dateCol} onSelect={setDateCol} />
