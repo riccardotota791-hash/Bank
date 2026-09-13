@@ -81,6 +81,18 @@ export default function NotificationImportScreen() {
               <PrimaryButton title="Apri impostazioni Android" onPress={handleActivate} style={{ marginTop: SPACING.md }} />
             </Card>
 
+            {status === 'denied' ? (
+              <View style={styles.noteBox}>
+                <Ionicons name="warning-outline" size={18} color={COLORS.accent} />
+                <Text style={styles.noteText}>
+                  Se Android mostra "impostazioni con restrizioni" e il toggle risulta bloccato: è una protezione
+                  di sicurezza per le app installate fuori dal Play Store. Vai su Impostazioni del telefono → App
+                  → Risparmio Buffett → menu (⋮) in alto a destra → "Consenti autorizzazioni con restrizioni",
+                  poi torna qui e riprova.
+                </Text>
+              </View>
+            ) : null}
+
             {status === 'authorized' ? (
               <View style={[styles.noteBox, { backgroundColor: COLORS.positiveLight }]}>
                 <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.positive} />
