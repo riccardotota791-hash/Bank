@@ -30,6 +30,18 @@ jobs:
           cache: npm
           cache-dependency-path: mobile-app/package-lock.json
 
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install dependencies
         run: npm ci
 
@@ -62,44 +74,21 @@ jobs:
             echo "app.json invariato, nessun projectId da salvare."
           fi
 
-      - name: Build APK on EAS
-        run: eas build --platform android --profile preview --non-interactive --wait --json > eas-build-result.json
+      # Build in locale sul runner (non sui server cloud di EAS): non consuma
+      # la quota mensile di build cloud del piano Free, solo più lento sulla
+      # prima esecuzione (poi la cache Gradle velocizza le successive).
+      - name: Build APK locally via EAS CLI
+        run: eas build --platform android --profile preview --local --non-interactive --output ./risparmio-buffett.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Show build result (debug)
-        if: always()
-        run: cat eas-build-result.json || true
-
-      - name: Extract APK download URL
+      - name: Verify APK exists
         run: |
-          node -e "
-            const fs = require('fs');
-            const raw = fs.readFileSync('eas-build-result.json', 'utf8');
-            const data = JSON.parse(raw);
-            const list = Array.isArray(data) ? data : [data];
-
-            function findBuildUrl(obj) {
-              if (!obj || typeof obj !== 'object') return null;
-              if (typeof obj.buildUrl === 'string') return obj.buildUrl;
-              for (const key of Object.keys(obj)) {
-                const found = findBuildUrl(obj[key]);
-                if (found) return found;
-              }
-              return null;
-            }
-
-            const url = list.map(findBuildUrl).find(Boolean);
-            if (!url) {
-              console.error('Impossibile trovare buildUrl nel risultato EAS:', raw);
-              process.exit(1);
-            }
-            fs.writeFileSync('apk_url.txt', url);
-            console.log('APK URL:', url);
-          "
-
-      - name: Download APK
-        run: curl -L --fail -o risparmio-buffett.apk "$(cat apk_url.txt)"
+          if [ ! -f risparmio-buffett.apk ]; then
+            echo "::error::APK non trovato dopo la build locale."
+            exit 1
+          fi
+          ls -lh risparmio-buffett.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

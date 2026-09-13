@@ -61,10 +61,11 @@ questa voce, e la soglia di risparmio consigliata è ricalibrata più alta
 
 ## Generare un vero APK (senza Expo Go)
 
-L'app è già configurata per essere compilata come APK installabile tramite
-**EAS Build** (il servizio cloud ufficiale di Expo), orchestrato da un
-workflow GitHub Actions incluso nel repo
-(`.github/workflows/build-android-apk.yml`). Serve un account Expo gratuito.
+L'app è già configurata per essere compilata come APK installabile, tramite
+un workflow GitHub Actions incluso nel repo
+(`.github/workflows/build-android-apk.yml`). Serve un account Expo gratuito
+(usato solo per gestire le credenziali/il keystore tramite **EAS**, non per
+la build vera e propria).
 
 Setup (una tantum):
 
@@ -82,16 +83,24 @@ Per compilare l'APK:
 2. Seleziona il workflow **"Build Android APK (EAS)"**.
 3. Clicca **"Run workflow"** (oppure fai un push su `mobile-app/**` per farlo
    partire automaticamente).
-4. Al termine (build su EAS, in genere 10-15 minuti), apri l'esecuzione
-   completata e scarica l'artifact **`risparmio-buffett-apk`**: contiene il
-   file `risparmio-buffett.apk`, pronto da installare su qualsiasi telefono
-   Android (abilita "Origini sconosciute" se richiesto dal sistema).
+4. Al termine, apri l'esecuzione completata e scarica l'artifact
+   **`risparmio-buffett-apk`**: contiene il file `risparmio-buffett.apk`,
+   pronto da installare su qualsiasi telefono Android (abilita "Origini
+   sconosciute" se richiesto dal sistema).
+
+La build compila **in locale sul runner di GitHub Actions** (Android SDK +
+Gradle installati al volo dal workflow stesso), non sui server cloud di EAS
+— questo significa che **non consuma la quota mensile di build cloud del
+piano Expo gratuito** (limitata a poche build/mese) e può girare tutte le
+volte che serve. Il rovescio della medaglia è che è più lenta della build
+cloud, soprattutto la prima volta (20-30 minuti, poi la cache di Gradle
+velocizza le esecuzioni successive).
 
 Il profilo di build usato è `preview` (definito in `eas.json`), che genera
-un `.apk` di distribuzione interna già firmato da EAS con un keystore
-generato automaticamente — non serve creare o gestire certificati a mano.
-Per pubblicare in futuro su Google Play, usa invece il profilo `production`
-(genera un `.aab`): `eas build --platform android --profile production`.
+un `.apk` di distribuzione interna con un keystore gestito da EAS — non
+serve creare o gestire certificati a mano. Per pubblicare in futuro su
+Google Play, usa invece il profilo `production` (genera un `.aab`):
+`eas build --platform android --profile production --local`.
 
 ## Collegamento Gmail (opzionale)
 
