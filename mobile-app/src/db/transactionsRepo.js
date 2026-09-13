@@ -201,6 +201,17 @@ export async function searchTransactions({
   );
 }
 
+/** Tutte le uscite di sempre, per il rilevamento degli abbonamenti ricorrenti. */
+export async function getAllExpenseTransactions() {
+  const db = await getDb();
+  return db.getAllAsync(
+    `SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
+     FROM transactions t LEFT JOIN categories c ON c.id = t.category_id
+     WHERE t.type = 'expense'
+     ORDER BY t.date ASC`
+  );
+}
+
 export async function getFirstTransactionDate() {
   const db = await getDb();
   const row = await db.getFirstAsync('SELECT MIN(date) as minDate FROM transactions');

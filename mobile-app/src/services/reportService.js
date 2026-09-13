@@ -4,12 +4,14 @@ import {
   getCategoryAverageOverRanges,
   getYearTotals,
   getAvailableMonths,
+  getAllExpenseTransactions,
 } from '../db/transactionsRepo';
 import { getCategoriesByType } from '../db/categoriesRepo';
 import { getAllSettings } from '../db/settingsRepo';
 import { computeSavingsRate, compareValues, recommendedSavingsTarget, reinvestmentRate, average } from '../engine/calculations';
 import { computeTargetSavings, detectOverspending, buildAdviceMessages } from '../engine/advice';
 import { computeHealthScore } from '../engine/healthScore';
+import { detectRecurringSubscriptions } from '../utils/recurringDetection';
 import { shiftMonthKey, getFinancialPeriodRange } from '../utils/formatters';
 
 function monthKeysBack(monthKey, n) {
@@ -197,4 +199,18 @@ export async function getGoldenRulesData(monthKey, payday = 27) {
     emergencyFundMin: avgEssentialMonthly * 3,
     emergencyFundMax: avgEssentialMonthly * 6,
   };
+}
+
+/**
+ * Abbonamenti/spese ricorrenti rilevati dallo storico (Netflix, palestra,
+ * assicurazioni pagate a rate fisse, ...): stessa nota (o categoria+importo
+ * se la nota è vuota) che ricorre in mesi diversi con importo simile e
+ * cadenza plausibilmente mensile. Nessun collegamento a servizi esterni:
+ * solo pattern-matching sui movimenti già registrati.
+ */
+export async function getRecurringSubscriptions() {
+  const expenses = await getAllExpenseTransactions();
+  const items = detectRecurringSubscriptions(expenses);
+  const activeMonthlyCost = items.filter((i) => i.status === 'active').reduce((sum, i) => sum + i.avgAmount, 0);
+  return { items, activeMonthlyCost, activeAnnualCost: activeMonthlyCost * 12 };
 }

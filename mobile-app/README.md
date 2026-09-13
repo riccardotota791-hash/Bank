@@ -114,10 +114,11 @@ chiede di indicare quale colonna contiene la data, quale l'importo (o le
 due colonne separate Entrate/Uscite), e opzionalmente quale la
 descrizione e quale la categoria (se il file la indica già).
 
-- **Duplicati**: una riga viene considerata già presente solo se esiste un
-  movimento con stessa data, stesso importo, stesso tipo *e* descrizione
-  uguale o simile — così due spese diverse ma con lo stesso importo lo
-  stesso giorno (es. due caffè) non vengono scartate per errore.
+- **Duplicati**: una riga viene considerata già presente se esiste un
+  movimento con stessa data, stesso importo e stesso tipo; ogni movimento
+  già in archivio "copre" al massimo una riga del file, così se il file ne
+  contiene più di quante ce ne sono già con quella combinazione, solo le
+  righe in eccesso vengono proposte come nuove.
 - **Categoria**: se mappi la colonna Categoria del file, prova prima quella;
   altrimenti (o se non trova corrispondenza) riconosce la categoria dalla
   descrizione tramite parole chiave (supermercati, ristoranti, trasporti,
@@ -129,7 +130,19 @@ Le operazioni riconosciute come nuove finiscono nella tab **Movimenti →
 meccanismo dell'import da Gmail): nessun movimento viene inserito
 automaticamente senza la tua conferma.
 
-## Collegamento Gmail (opzionale)
+## Abbonamenti ricorrenti
+
+Nella tab **Statistiche**, la sezione "Abbonamenti ricorrenti" individua da
+sola le spese che si ripetono ogni mese (Netflix, Spotify, palestra,
+assicurazioni a rata fissa, ...): raggruppa le uscite per nota simile (o per
+categoria+importo se la nota è vuota) e considera "ricorrente" solo ciò che
+compare in almeno due mesi diversi con importo simile e una cadenza
+plausibilmente mensile. Mostra il totale mensile/annuo degli abbonamenti
+ancora attivi, e segna come "Da verificare" quelli il cui ultimo addebito
+risale a più di 45 giorni fa (probabilmente disdetti). È tutto calcolato
+sui movimenti già presenti nell'app — nessun collegamento a servizi esterni.
+
+## Struttura del progetto
 
 ```
 mobile-app/
