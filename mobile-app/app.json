@@ -41,7 +41,8 @@
           "icon": "./assets/icon.png",
           "color": "#1F6F50"
         }
-      ]
+      ],
+      "./plugins/withAndroidManifestFixes"
     ],
     "extra": {
       "eas": {
