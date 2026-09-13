@@ -82,6 +82,7 @@ export async function initDatabase() {
   await seedDefaultCategories(db);
   await seedDefaultSettings(db);
   await migrateExpenseCategories(db);
+  await migrateSavingCategories(db);
   await seedExcelImportOnce(db);
 }
 
@@ -155,6 +156,24 @@ async function migrateExpenseCategories(db) {
   );
   for (const cat of DEFAULT_CATEGORIES.filter((c) => c.type === 'expense')) {
     if (!existingExpenseNames.has(cat.name)) {
+      await db.runAsync(
+        'INSERT INTO categories (name, type, icon, color, is_default, monthly_budget) VALUES (?, ?, ?, ?, 1, ?)',
+        [cat.name, cat.type, cat.icon, cat.color, cat.monthly_budget]
+      );
+    }
+  }
+}
+
+/**
+ * Aggiunge alle installazioni esistenti le categorie di risparmio introdotte
+ * dopo la loro prima apertura (es. "Assicurazione macchina"). Idempotente.
+ */
+async function migrateSavingCategories(db) {
+  const existingSavingNames = new Set(
+    (await db.getAllAsync('SELECT name FROM categories WHERE type = ?', ['saving'])).map((r) => r.name)
+  );
+  for (const cat of DEFAULT_CATEGORIES.filter((c) => c.type === 'saving')) {
+    if (!existingSavingNames.has(cat.name)) {
       await db.runAsync(
         'INSERT INTO categories (name, type, icon, color, is_default, monthly_budget) VALUES (?, ?, ?, ?, 1, ?)',
         [cat.name, cat.type, cat.icon, cat.color, cat.monthly_budget]

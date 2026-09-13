@@ -30,6 +30,7 @@ export const DEFAULT_CATEGORIES = [
   // Risparmio / investimenti (allocazione del risparmio già calcolato)
   { name: 'Investimenti (ETF/Azioni)', type: 'saving', icon: 'trending-up-outline', color: '#C9A227', monthly_budget: null },
   { name: 'Fondo emergenza', type: 'saving', icon: 'shield-checkmark-outline', color: '#B8901E', monthly_budget: null },
+  { name: 'Assicurazione macchina', type: 'saving', icon: 'shield-checkmark-outline', color: '#8F6D1F', monthly_budget: null },
   { name: 'Altro risparmio', type: 'saving', icon: 'save-outline', color: '#A67F19', monthly_budget: null },
 ];
 
