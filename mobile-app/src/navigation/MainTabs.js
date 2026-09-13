@@ -16,6 +16,7 @@ import CategoryManagerScreen from '../screens/CategoryManagerScreen';
 import CategoryEditScreen from '../screens/CategoryEditScreen';
 import GmailSetupScreen from '../screens/GmailSetupScreen';
 import ImportFileScreen from '../screens/ImportFileScreen';
+import NotificationImportScreen from '../screens/NotificationImportScreen';
 import NewsScreen from '../screens/NewsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -65,6 +66,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="CategoryEdit" component={CategoryEditScreen} />
       <SettingsStack.Screen name="GmailSetup" component={GmailSetupScreen} options={{ title: 'Collega Gmail' }} />
       <SettingsStack.Screen name="ImportFile" component={ImportFileScreen} options={{ title: 'Importa da file' }} />
+      <SettingsStack.Screen name="NotificationImport" component={NotificationImportScreen} options={{ title: 'Notifiche bancarie' }} />
     </SettingsStack.Navigator>
   );
 }

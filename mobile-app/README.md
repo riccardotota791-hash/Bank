@@ -113,6 +113,22 @@ Expo Go potrebbe non completarsi per via delle limitazioni sui redirect URI
 dei client OAuth "installed app". Tutto il resto dell'app, incluso
 l'inserimento manuale rapido, funziona sempre perfettamente in Expo Go.
 
+## Importazione automatica da notifiche bancarie (IsyBank, Android)
+
+Da **Impostazioni → Importa da notifiche bancarie** puoi attivare il
+riconoscimento automatico dei pagamenti IsyBank: quando sul telefono arriva
+la notifica push "Hai pagato X € con la carta ... da NEGOZIO", l'app la
+riconosce (importo, data, esercente) e la propone da confermare nella tab
+Movimenti con uno swipe, categoria già suggerita in base al nome
+dell'esercente. Richiede il permesso di sistema Android "Accesso alle
+notifiche" (si attiva una volta sola dalle impostazioni di Android, Google
+non permette di farlo direttamente dall'app). Solo le notifiche che
+corrispondono esattamente al formato dei pagamenti IsyBank vengono lette e
+usate: tutte le altre notifiche del telefono sono ignorate e non vengono
+mai salvate. Disponibile solo su Android (iOS non permette a nessuna app di
+leggere le notifiche di altre app) e solo nell'APK installato, non dentro
+Expo Go (richiede un modulo nativo compilato).
+
 ## Importazione semi-automatica da file (Excel/CSV)
 
 Da **Impostazioni → Importa da file (Excel/CSV)** puoi scegliere il file

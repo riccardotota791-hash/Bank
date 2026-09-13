@@ -155,6 +155,13 @@ export default function SettingsScreen({ navigation }) {
             hint="Estratto conto scaricato dall'app della banca"
             onPress={() => navigation.navigate('ImportFile')}
           />
+          <View style={styles.divider} />
+          <NavRow
+            icon="notifications-outline"
+            label="Importa da notifiche bancarie"
+            hint="Riconosce i pagamenti IsyBank in automatico (Android)"
+            onPress={() => navigation.navigate('NotificationImport')}
+          />
         </Card>
 
         <SectionTitle style={{ marginTop: SPACING.lg }}>Personalizzazione</SectionTitle>
