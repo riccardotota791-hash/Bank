@@ -36,8 +36,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # Niente step "Setup Android SDK": i runner ubuntu-latest hanno già un
+      # Android SDK completo preinstallato in /usr/local/lib/android/sdk (con
+      # ANDROID_HOME/ANDROID_SDK_ROOT già impostati e licenze già accettate).
+      # L'azione android-actions/setup-android@v3 tentava di installare in più
+      # il pacchetto legacy "tools", che Google ha rimosso dal repository:
+      # questo la fa fallire con "Failed to find package 'tools'" pur non
+      # servendo a nulla per la build (Gradle/EAS scaricano da soli qualsiasi
+      # platform/build-tools specifico manchi).
 
       - name: Setup Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
