@@ -4,6 +4,7 @@ import { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-androi
 
 import App from './App';
 import { importFromBankNotification } from './src/services/notificationImportService';
+import { logNotificationDebugEvent } from './src/services/notificationDebugLog';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
@@ -20,7 +21,9 @@ const handleIncomingNotification = async ({ notification }) => {
     const parsed = typeof notification === 'string' ? JSON.parse(notification) : notification;
     await importFromBankNotification(parsed);
   } catch (e) {
-    // Il servizio di sistema non deve mai andare in crash per un errore di parsing.
+    // Il servizio di sistema non deve mai andare in crash per un errore di parsing:
+    // registriamo comunque l'errore nel log diagnostico per poterlo vedere dall'app.
+    await logNotificationDebugEvent('errore_parsing', e?.message || String(e));
   }
 };
 
