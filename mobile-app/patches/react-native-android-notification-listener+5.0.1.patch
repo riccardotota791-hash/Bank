@@ -46,7 +46,7 @@ index 350e4c2..25c0d23 100644
  
      @Override
 diff --git a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java
-index 17ed906..04f2ce5 100644
+index 17ed906..598fc3a 100644
 --- a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java
 +++ b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java
 @@ -1,6 +1,11 @@
@@ -61,31 +61,26 @@ index 17ed906..04f2ce5 100644
  import android.os.Bundle;
  import com.facebook.react.HeadlessJsTaskService;
  import com.facebook.react.bridge.Arguments;
-@@ -8,6 +13,9 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig;
+@@ -8,6 +13,45 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig;
  import javax.annotation.Nullable;
  
  public class RNAndroidNotificationListenerHeadlessJsTaskService extends HeadlessJsTaskService {
 +    private static final String CHANNEL_ID = "rn_android_notification_listener_sync";
 +    private static final int NOTIFICATION_ID = 8241;
 +
-     @Override
-     protected @Nullable HeadlessJsTaskConfig getTaskConfig(Intent intent) {
-         Bundle extras = intent.getExtras();
-@@ -21,4 +29,45 @@ public class RNAndroidNotificationListenerHeadlessJsTaskService extends Headless
-         }
-         return null;
-     }
-+
-+    // Il chiamante (RNAndroidNotificationListener) ora usa
-+    // startForegroundService() su Android 8+, obbligatorio quando si avvia
-+    // un servizio da un componente già in background. La legge impone di
-+    // promuovere davvero il servizio a foreground entro pochi secondi con
-+    // startForeground(), altrimenti il sistema lo termina con
-+    // ForegroundServiceDidNotStartInTimeException prima che il task JS
-+    // possa girare.
++    // Il chiamante (RNAndroidNotificationListener) usa startForegroundService()
++    // su Android 8+, obbligatorio quando si avvia un servizio da un componente
++    // già in background. La legge impone di promuovere il servizio a
++    // foreground con startForeground() entro ~5 secondi dalla creazione,
++    // altrimenti il sistema lo termina con
++    // ForegroundServiceDidNotStartInTimeException — quindi va chiamato subito
++    // in onCreate(), non dopo l'avvio del task JS: avviare un'istanza React
++    // Native da zero (ad app completamente chiusa) può da solo superare
++    // quei 5 secondi, ed è esattamente il caso più comune per una notifica
++    // ricevuta in background.
 +    @Override
-+    public void onHeadlessJsTaskStart(int taskId) {
-+        super.onHeadlessJsTaskStart(taskId);
++    public void onCreate() {
++        super.onCreate();
 +        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 +            NotificationManager manager = getSystemService(NotificationManager.class);
 +            if (manager != null && manager.getNotificationChannel(CHANNEL_ID) == null) {
@@ -109,6 +104,14 @@ index 17ed906..04f2ce5 100644
 +        }
 +    }
 +
+     @Override
+     protected @Nullable HeadlessJsTaskConfig getTaskConfig(Intent intent) {
+         Bundle extras = intent.getExtras();
+@@ -21,4 +65,12 @@ public class RNAndroidNotificationListenerHeadlessJsTaskService extends Headless
+         }
+         return null;
+     }
++
 +    @Override
 +    public void onHeadlessJsTaskFinish(int taskId) {
 +        super.onHeadlessJsTaskFinish(taskId);
@@ -117,4 +120,3 @@ index 17ed906..04f2ce5 100644
 +        }
 +    }
  }
-\ No newline at end of file
