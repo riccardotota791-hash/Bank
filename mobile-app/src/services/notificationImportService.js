@@ -1,5 +1,5 @@
 import { getCategoriesByType } from '../db/categoriesRepo';
-import { addPendingImport } from '../db/pendingImportRepo';
+import { addPendingImport, findSimilarPendingImports } from '../db/pendingImportRepo';
 import { findSimilarTransactions } from '../db/transactionsRepo';
 import { parseIsyBankPaymentNotification } from '../utils/notificationParser';
 import { guessCategoryName } from '../utils/categoryGuess';
@@ -43,7 +43,8 @@ export async function importFromBankNotification(notification) {
     }
 
     const alreadyPresent = await findSimilarTransactions({ date: parsed.date, type: 'expense', amount: parsed.amount });
-    if (alreadyPresent.length > 0) {
+    const alreadyPending = await findSimilarPendingImports({ date: parsed.date, type: 'expense', amount: parsed.amount });
+    if (alreadyPresent.length > 0 || alreadyPending.length > 0) {
       await logNotificationDebugEvent('duplicato_ignorato', `${parsed.amount}€ ${parsed.date} ${parsed.note}`);
       return null;
     }

@@ -54,8 +54,13 @@ const INCOME_KEYWORDS = [
 export function guessCategoryName(text) {
   const lower = String(text || '').toLowerCase();
   if (!lower) return 'Altro';
+  // Gli estratti conto e le notifiche bancarie a volte spezzano i nomi degli
+  // esercenti con spazi diversi dal solito (es. "MC DONALD" invece di
+  // "McDonald's"): confrontiamo anche una versione senza spazi, così le
+  // parole chiave restano valide indipendentemente dalla spaziatura.
+  const compact = lower.replace(/\s+/g, '');
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (keywords.some((k) => lower.includes(k))) return category;
+    if (keywords.some((k) => lower.includes(k) || compact.includes(k.replace(/\s+/g, '')))) return category;
   }
   return 'Altro';
 }

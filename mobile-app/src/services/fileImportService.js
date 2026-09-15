@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { File } from 'expo-file-system';
 import { getCategoriesByType } from '../db/categoriesRepo';
-import { addPendingImport } from '../db/pendingImportRepo';
+import { addPendingImport, findSimilarPendingImports } from '../db/pendingImportRepo';
 import { findSimilarTransactions } from '../db/transactionsRepo';
 import { parseDateValue, parseAmountValue, shortHash } from '../utils/importParsing';
 import { guessCategoryName } from '../utils/categoryGuess';
@@ -74,22 +74,26 @@ function resolveCategoryId(type, { categoryText, description }, categoriesByType
 
 /**
  * Trasforma le righe grezze del foglio (esclusa l'intestazione) in movimenti
- * candidati usando la mappatura di colonne scelta dall'utente, poi crea una
- * proposta "da confermare" per ogni riga che non risulti già presente né tra
- * i movimenti reali né tra le proposte in sospeso di un import precedente.
+ * candidati usando la mappatura di colonne scelta dall'utente, SENZA
+ * scrivere ancora nulla sul database: restituisce un elenco che la
+ * schermata mostra per la revisione (categoria compresa, modificabile) e la
+ * scelta riga per riga di cosa importare davvero, prima di confermare.
  *
- * Il confronto duplicati si basa su data + importo + tipo: nella pratica la
- * descrizione del testo bancario ("PAGAMENTO POS ESSELUNGA...") quasi mai
- * coincide con la nota che l'utente ha scritto a mano o importato in
- * precedenza (es. "Spesa settimanale"), quindi richiedere anche la
- * somiglianza testuale fa perdere duplicati veri. Per non scartare per
- * errore due spese diverse ma con stesso importo lo stesso giorno, ogni
- * movimento reale esistente "copre" al massimo una riga del file: se il
- * file ne contiene più di quante ce ne sono già in archivio con quella
- * combinazione data+importo+tipo, le righe in eccesso sono considerate
- * nuove.
+ * Il confronto duplicati si basa su data + importo + tipo, sia contro i
+ * movimenti reali già confermati sia contro le proposte "da confermare"
+ * già in coda (es. arrivate da una notifica bancaria o da un import
+ * precedente non ancora rivisto): senza questo secondo controllo, importare
+ * due file con periodi che si sovrappongono prima di aver confermato il
+ * primo batch avrebbe proposto due volte la stessa operazione. Nella
+ * pratica la descrizione del testo bancario ("PAGAMENTO POS ESSELUNGA...")
+ * quasi mai coincide con la nota scritta a mano, quindi il confronto non
+ * considera il testo. Per non scartare per errore due spese diverse ma con
+ * stesso importo lo stesso giorno, ogni movimento/proposta esistente
+ * "copre" al massimo una riga del file: le righe in eccesso rispetto a
+ * quante ce ne sono già con quella combinazione data+importo+tipo sono
+ * considerate nuove.
  */
-export async function importMappedRows({ rows, mapping, sourceLabel }) {
+export async function buildImportCandidates({ rows, mapping, sourceLabel }) {
   const expenseCategories = await getCategoriesByType('expense');
   const incomeCategories = await getCategoriesByType('income');
   const categoriesByType = { expense: expenseCategories, income: incomeCategories };
@@ -98,8 +102,7 @@ export async function importMappedRows({ rows, mapping, sourceLabel }) {
     income: incomeCategories.find((c) => c.name === 'Altre entrate')?.id ?? incomeCategories[0]?.id ?? null,
   };
 
-  let imported = 0;
-  let skippedDuplicate = 0;
+  const candidates = [];
   let skippedInvalid = 0;
   const consumedMatches = new Map();
 
@@ -137,28 +140,58 @@ export async function importMappedRows({ rows, mapping, sourceLabel }) {
     const externalId = `file:${sourceLabel}:${date}:${type}:${amount.toFixed(2)}:${shortHash(description)}`;
 
     const key = `${date}|${type}|${amount.toFixed(2)}`;
-    const candidates = await findSimilarTransactions({ date, type, amount });
+    const existingTx = await findSimilarTransactions({ date, type, amount });
+    const existingPending = await findSimilarPendingImports({ date, type, amount });
+    const totalExisting = existingTx.length + existingPending.length;
     const alreadyConsumed = consumedMatches.get(key) || 0;
-    if (alreadyConsumed < candidates.length) {
-      consumedMatches.set(key, alreadyConsumed + 1);
-      skippedDuplicate += 1;
-      continue;
-    }
+    const isDuplicate = alreadyConsumed < totalExisting;
+    if (isDuplicate) consumedMatches.set(key, alreadyConsumed + 1);
 
     const categoryId = resolveCategoryId(type, { categoryText, description }, categoriesByType, fallbackByName);
-    const result = await addPendingImport({
-      amount,
-      suggested_type: type,
-      suggested_category_id: categoryId,
-      merchant: description || categoryText || null,
-      raw_snippet: description,
-      date,
-      gmail_message_id: externalId,
-    });
 
-    if (result) imported += 1;
-    else skippedDuplicate += 1;
+    candidates.push({
+      key: `${externalId}:${candidates.length}`,
+      date,
+      type,
+      amount,
+      description,
+      categoryText,
+      categoryId,
+      externalId,
+      isDuplicate,
+      include: !isDuplicate,
+    });
   }
 
-  return { imported, skippedDuplicate, skippedInvalid, total: rows.length };
+  return { candidates, skippedInvalid, categoriesByType };
+}
+
+/**
+ * Scrive sul database solo le righe che l'utente ha confermato di voler
+ * importare (candidate.include === true), con la categoria eventualmente
+ * corretta a mano nella schermata di revisione.
+ */
+export async function commitImportCandidates(candidates) {
+  let imported = 0;
+  let skipped = 0;
+
+  for (const c of candidates) {
+    if (!c.include) {
+      skipped += 1;
+      continue;
+    }
+    const result = await addPendingImport({
+      amount: c.amount,
+      suggested_type: c.type,
+      suggested_category_id: c.categoryId,
+      merchant: c.description || c.categoryText || null,
+      raw_snippet: c.description,
+      date: c.date,
+      gmail_message_id: c.externalId,
+    });
+    if (result) imported += 1;
+    else skipped += 1;
+  }
+
+  return { imported, skipped };
 }
