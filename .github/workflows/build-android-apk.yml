@@ -48,6 +48,29 @@ jobs:
       - name: Setup Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
 
+      # eas build --local invoca Gradle, che scarica da solo l'NDK "side by
+      # side" richiesto dal progetto (27.1.12297006) se non già presente sul
+      # runner. Quel download-durante-la-build a volte arriva troncato/corrotto
+      # ("Archive is not a ZIP archive") e fa fallire tutta la build dopo ~2
+      # minuti di compilazione nativa già fatta. Installandolo qui, in un passo
+      # dedicato con retry, l'eventuale corruzione si ripresenta subito (pochi
+      # secondi) invece che dopo aver buttato via il lavoro di Gradle.
+      - name: Ensure required Android NDK is installed
+        run: |
+          set -e
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          NDK_PKG="ndk;27.1.12297006"
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          for attempt in 1 2 3; do
+            rm -rf "$ANDROID_HOME/ndk/27.1.12297006"
+            if "$SDKMANAGER" --install "$NDK_PKG"; then
+              break
+            fi
+            echo "::warning::sdkmanager install di $NDK_PKG fallito (tentativo $attempt), riprovo..."
+            sleep 10
+          done
+          test -d "$ANDROID_HOME/ndk/27.1.12297006"
+
       - name: Install dependencies
         run: npm ci
 
