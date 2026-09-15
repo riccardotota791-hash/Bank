@@ -1,0 +1,120 @@
+diff --git a/node_modules/react-native-android-notification-listener/android/src/main/AndroidManifest.xml b/node_modules/react-native-android-notification-listener/android/src/main/AndroidManifest.xml
+index 3cb5acc..87d6cef 100644
+--- a/node_modules/react-native-android-notification-listener/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-android-notification-listener/android/src/main/AndroidManifest.xml
+@@ -6,6 +6,8 @@
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+     <uses-permission android:name="android.permission.WAKE_LOCK" />
+     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
++    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
++    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+ 
+     <application
+         android:allowBackup="false">
+@@ -18,7 +20,9 @@
+             </intent-filter>
+         </service>
+ 
+-        <service android:name="com.lesimoes.androidnotificationlistener.RNAndroidNotificationListenerHeadlessJsTaskService" />
++        <service
++            android:name="com.lesimoes.androidnotificationlistener.RNAndroidNotificationListenerHeadlessJsTaskService"
++            android:foregroundServiceType="dataSync" />
+ 
+         <receiver
+             android:name="com.lesimoes.androidnotificationlistener.BootUpReceiver"
+diff --git a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java
+index 350e4c2..25c0d23 100644
+--- a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java
++++ b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java
+@@ -36,7 +36,17 @@ public class RNAndroidNotificationListener extends NotificationListenerService {
+ 
+         HeadlessJsTaskService.acquireWakeLockNow(context);
+ 
+-        context.startService(serviceIntent);
++        // Su Android 8+ non si può avviare un servizio "normale" da un
++        // componente che gira già in background (qui la
++        // NotificationListenerService, che riceve notifiche anche ad app
++        // chiusa): startService() lancia IllegalStateException in quel
++        // caso. Va promosso a foreground service; RNAndroidNotificationListenerHeadlessJsTaskService
++        // si occupa di chiamare startForeground() non appena parte.
++        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
++            context.startForegroundService(serviceIntent);
++        } else {
++            context.startService(serviceIntent);
++        }
+     }
+ 
+     @Override
+diff --git a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java
+index 17ed906..04f2ce5 100644
+--- a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java
++++ b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListenerHeadlessJsTaskService.java
+@@ -1,6 +1,11 @@
+ package com.lesimoes.androidnotificationlistener;
+ 
++import android.app.Notification;
++import android.app.NotificationChannel;
++import android.app.NotificationManager;
+ import android.content.Intent;
++import android.content.pm.ServiceInfo;
++import android.os.Build;
+ import android.os.Bundle;
+ import com.facebook.react.HeadlessJsTaskService;
+ import com.facebook.react.bridge.Arguments;
+@@ -8,6 +13,9 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig;
+ import javax.annotation.Nullable;
+ 
+ public class RNAndroidNotificationListenerHeadlessJsTaskService extends HeadlessJsTaskService {
++    private static final String CHANNEL_ID = "rn_android_notification_listener_sync";
++    private static final int NOTIFICATION_ID = 8241;
++
+     @Override
+     protected @Nullable HeadlessJsTaskConfig getTaskConfig(Intent intent) {
+         Bundle extras = intent.getExtras();
+@@ -21,4 +29,45 @@ public class RNAndroidNotificationListenerHeadlessJsTaskService extends Headless
+         }
+         return null;
+     }
++
++    // Il chiamante (RNAndroidNotificationListener) ora usa
++    // startForegroundService() su Android 8+, obbligatorio quando si avvia
++    // un servizio da un componente già in background. La legge impone di
++    // promuovere davvero il servizio a foreground entro pochi secondi con
++    // startForeground(), altrimenti il sistema lo termina con
++    // ForegroundServiceDidNotStartInTimeException prima che il task JS
++    // possa girare.
++    @Override
++    public void onHeadlessJsTaskStart(int taskId) {
++        super.onHeadlessJsTaskStart(taskId);
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
++            NotificationManager manager = getSystemService(NotificationManager.class);
++            if (manager != null && manager.getNotificationChannel(CHANNEL_ID) == null) {
++                NotificationChannel channel = new NotificationChannel(
++                        CHANNEL_ID, "Sincronizzazione notifiche bancarie", NotificationManager.IMPORTANCE_MIN);
++                channel.setShowBadge(false);
++                manager.createNotificationChannel(channel);
++            }
++
++            Notification notification = new Notification.Builder(this, CHANNEL_ID)
++                    .setContentTitle("Controllo notifiche bancarie")
++                    .setSmallIcon(android.R.drawable.stat_notify_sync)
++                    .setPriority(Notification.PRIORITY_MIN)
++                    .build();
++
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
++                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
++            } else {
++                startForeground(NOTIFICATION_ID, notification);
++            }
++        }
++    }
++
++    @Override
++    public void onHeadlessJsTaskFinish(int taskId) {
++        super.onHeadlessJsTaskFinish(taskId);
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
++            stopForeground(true);
++        }
++    }
+ }
+\ No newline at end of file
