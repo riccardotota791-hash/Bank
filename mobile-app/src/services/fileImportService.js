@@ -170,13 +170,20 @@ export async function buildImportCandidates({ rows, mapping, sourceLabel }) {
  * Scrive sul database solo le righe che l'utente ha confermato di voler
  * importare (candidate.include === true), con la categoria eventualmente
  * corretta a mano nella schermata di revisione.
+ *
+ * Le righe segnate come duplicate in buildImportCandidates non vengono mai
+ * scritte, indipendentemente da "include": è già capitato che nella
+ * schermata di revisione l'utente selezionasse anche righe marcate "Già
+ * presente" (magari senza accorgersi dell'etichetta), reintroducendo così
+ * movimenti già registrati in precedenza. Questo controllo è la garanzia
+ * finale che un duplicato riconosciuto non possa comunque essere importato.
  */
 export async function commitImportCandidates(candidates) {
   let imported = 0;
   let skipped = 0;
 
   for (const c of candidates) {
-    if (!c.include) {
+    if (!c.include || c.isDuplicate) {
       skipped += 1;
       continue;
     }

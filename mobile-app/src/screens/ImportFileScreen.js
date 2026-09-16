@@ -46,10 +46,13 @@ export default function ImportFileScreen({ navigation }) {
   const [candidates, setCandidates] = useState(null);
   const [categoriesByType, setCategoriesByType] = useState({ expense: [], income: [] });
   const [pickerForKey, setPickerForKey] = useState(null);
+  const [showDuplicates, setShowDuplicates] = useState(false);
 
   const previewRows = useMemo(() => dataRows.slice(0, 4), [dataRows]);
-  const includedCount = useMemo(() => (candidates || []).filter((c) => c.include).length, [candidates]);
-  const duplicateCount = useMemo(() => (candidates || []).filter((c) => c.isDuplicate).length, [candidates]);
+  const newCandidates = useMemo(() => (candidates || []).filter((c) => !c.isDuplicate), [candidates]);
+  const duplicateCandidates = useMemo(() => (candidates || []).filter((c) => c.isDuplicate), [candidates]);
+  const includedCount = useMemo(() => newCandidates.filter((c) => c.include).length, [newCandidates]);
+  const duplicateCount = duplicateCandidates.length;
 
   const handlePickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: FILE_TYPES, copyToCacheDirectory: true });
@@ -261,13 +264,12 @@ export default function ImportFileScreen({ navigation }) {
               Rivedi prima di importare
             </SectionTitle>
             <Text style={styles.hint}>
-              {includedCount} selezionate su {candidates.length}
-              {duplicateCount > 0 ? ` · ${duplicateCount} già presenti (deselezionate in automatico)` : ''}
+              {includedCount} selezionate su {newCandidates.length}
               {skippedInvalid > 0 ? ` · ${skippedInvalid} righe del file ignorate (data/importo non validi)` : ''}
             </Text>
 
             <View style={{ marginTop: SPACING.md, gap: SPACING.sm }}>
-              {candidates.map((c) => {
+              {newCandidates.map((c) => {
                 const catList = categoriesByType[c.type] || [];
                 const category = catList.find((cat) => cat.id === c.categoryId);
                 return (
@@ -292,7 +294,6 @@ export default function ImportFileScreen({ navigation }) {
                       </View>
                       <View style={styles.rowBottomLine}>
                         <Text style={styles.rowDate}>{c.date}</Text>
-                        {c.isDuplicate ? <Badge text="Già presente" color={COLORS.textSecondary} background={COLORS.background} /> : null}
                       </View>
                       <Pressable style={styles.categoryChip} onPress={() => setPickerForKey(c.key)}>
                         {category ? (
@@ -308,6 +309,40 @@ export default function ImportFileScreen({ navigation }) {
                 );
               })}
             </View>
+
+            {duplicateCount > 0 ? (
+              <View style={{ marginTop: SPACING.lg }}>
+                <Pressable style={styles.duplicatesToggle} onPress={() => setShowDuplicates((v) => !v)}>
+                  <Ionicons name={showDuplicates ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textMuted} />
+                  <Text style={styles.hint}>
+                    {duplicateCount} già presenti in archivio, non verranno reimportate — {showDuplicates ? 'nascondi' : 'mostra'}
+                  </Text>
+                </Pressable>
+                {showDuplicates ? (
+                  <View style={{ marginTop: SPACING.sm, gap: SPACING.sm }}>
+                    {duplicateCandidates.map((c) => (
+                      <Card key={c.key} style={[styles.rowCard, styles.rowCardExcluded]}>
+                        <View style={{ flex: 1 }}>
+                          <View style={styles.rowTopLine}>
+                            <Text style={styles.rowDesc} numberOfLines={1}>
+                              {c.description || c.categoryText || '(senza descrizione)'}
+                            </Text>
+                            <Text style={styles.rowAmount}>
+                              {c.type === 'expense' ? '-' : '+'}
+                              {c.amount.toFixed(2)}€
+                            </Text>
+                          </View>
+                          <View style={styles.rowBottomLine}>
+                            <Text style={styles.rowDate}>{c.date}</Text>
+                            <Badge text="Già presente" color={COLORS.textSecondary} background={COLORS.background} />
+                          </View>
+                        </View>
+                      </Card>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
 
             <PrimaryButton
               title={committing ? 'Importazione...' : `Conferma import (${includedCount})`}
@@ -439,6 +474,11 @@ const styles = StyleSheet.create({
   },
   rowCardExcluded: {
     opacity: 0.5,
+  },
+  duplicatesToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
   },
   rowCheckbox: {
     paddingTop: 2,
