@@ -19,18 +19,20 @@ export async function updateTransaction(id, { amount, type, category_id, note, d
 }
 
 /**
- * Movimenti già esistenti con la stessa data, tipo e importo (tolleranza 1
+ * Movimenti già esistenti con la stessa data e importo (tolleranza 1
  * centesimo) — candidati per il controllo duplicati degli importatori
- * (Excel/CSV): la nota di ciascuno va poi confrontata con la descrizione
- * della riga da importare, perché data+importo uguali da soli non bastano
- * a distinguere due spese diverse ma coincidenti (es. due caffè da 1,20€
- * lo stesso giorno).
+ * (Excel/CSV, notifiche bancarie). Il tipo (entrata/uscita) NON entra nel
+ * confronto: dipende dal segno o dalla colonna scelta durante la
+ * mappatura del file, che può risultare diverso da un import all'altro
+ * (colonna sbagliata, formato del file cambiato) pur trattandosi dello
+ * stesso identico movimento — richiedere anche quello faceva perdere
+ * duplicati veri più spesso di quanto impedisse falsi positivi.
  */
-export async function findSimilarTransactions({ date, type, amount }) {
+export async function findSimilarTransactions({ date, amount }) {
   const db = await getDb();
   return db.getAllAsync(
-    'SELECT id, note FROM transactions WHERE date = ? AND type = ? AND ABS(amount - ?) < 0.01',
-    [date, type, amount]
+    'SELECT id, note FROM transactions WHERE date = ? AND ABS(amount - ?) < 0.01',
+    [date, amount]
   );
 }
 

@@ -79,19 +79,21 @@ function resolveCategoryId(type, { categoryText, description }, categoriesByType
  * schermata mostra per la revisione (categoria compresa, modificabile) e la
  * scelta riga per riga di cosa importare davvero, prima di confermare.
  *
- * Il confronto duplicati si basa su data + importo + tipo, sia contro i
- * movimenti reali già confermati sia contro le proposte "da confermare"
- * già in coda (es. arrivate da una notifica bancaria o da un import
- * precedente non ancora rivisto): senza questo secondo controllo, importare
- * due file con periodi che si sovrappongono prima di aver confermato il
- * primo batch avrebbe proposto due volte la stessa operazione. Nella
- * pratica la descrizione del testo bancario ("PAGAMENTO POS ESSELUNGA...")
- * quasi mai coincide con la nota scritta a mano, quindi il confronto non
- * considera il testo. Per non scartare per errore due spese diverse ma con
- * stesso importo lo stesso giorno, ogni movimento/proposta esistente
- * "copre" al massimo una riga del file: le righe in eccesso rispetto a
- * quante ce ne sono già con quella combinazione data+importo+tipo sono
- * considerate nuove.
+ * Il confronto duplicati si basa su data + importo (il tipo entrata/uscita
+ * NON viene richiesto: dipende dal segno o dalla colonna scelta in fase di
+ * mappatura, che può risultare diverso da un import all'altro pur essendo
+ * lo stesso identico movimento), sia contro i movimenti reali già
+ * confermati sia contro le proposte "da confermare" già in coda (es.
+ * arrivate da una notifica bancaria o da un import precedente non ancora
+ * rivisto): senza questo secondo controllo, importare due file con periodi
+ * che si sovrappongono prima di aver confermato il primo batch avrebbe
+ * proposto due volte la stessa operazione. Nella pratica la descrizione
+ * del testo bancario ("PAGAMENTO POS ESSELUNGA...") quasi mai coincide con
+ * la nota scritta a mano, quindi il confronto non considera il testo. Per
+ * non scartare per errore due spese diverse ma con stesso importo lo
+ * stesso giorno, ogni movimento/proposta esistente "copre" al massimo una
+ * riga del file: le righe in eccesso rispetto a quante ce ne sono già con
+ * quella combinazione data+importo sono considerate nuove.
  */
 export async function buildImportCandidates({ rows, mapping, sourceLabel }) {
   const expenseCategories = await getCategoriesByType('expense');
@@ -139,9 +141,9 @@ export async function buildImportCandidates({ rows, mapping, sourceLabel }) {
     const categoryText = mapping.categoryCol != null ? String(row[mapping.categoryCol] ?? '').trim() : '';
     const externalId = `file:${sourceLabel}:${date}:${type}:${amount.toFixed(2)}:${shortHash(description)}`;
 
-    const key = `${date}|${type}|${amount.toFixed(2)}`;
-    const existingTx = await findSimilarTransactions({ date, type, amount });
-    const existingPending = await findSimilarPendingImports({ date, type, amount });
+    const key = `${date}|${amount.toFixed(2)}`;
+    const existingTx = await findSimilarTransactions({ date, amount });
+    const existingPending = await findSimilarPendingImports({ date, amount });
     const totalExisting = existingTx.length + existingPending.length;
     const alreadyConsumed = consumedMatches.get(key) || 0;
     const isDuplicate = alreadyConsumed < totalExisting;

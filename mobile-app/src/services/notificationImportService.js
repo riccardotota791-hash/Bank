@@ -42,8 +42,8 @@ export async function importFromBankNotification(notification) {
       return null;
     }
 
-    const alreadyPresent = await findSimilarTransactions({ date: parsed.date, type: 'expense', amount: parsed.amount });
-    const alreadyPending = await findSimilarPendingImports({ date: parsed.date, type: 'expense', amount: parsed.amount });
+    const alreadyPresent = await findSimilarTransactions({ date: parsed.date, amount: parsed.amount });
+    const alreadyPending = await findSimilarPendingImports({ date: parsed.date, amount: parsed.amount });
     if (alreadyPresent.length > 0 || alreadyPending.length > 0) {
       await logNotificationDebugEvent('duplicato_ignorato', `${parsed.amount}€ ${parsed.date} ${parsed.note}`);
       return null;
