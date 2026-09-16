@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { getAllSettings } from '../db/settingsRepo';
 
@@ -27,6 +27,28 @@ export async function initNotifications() {
     await Notifications.requestPermissionsAsync();
   }
   await rescheduleAllNotifications();
+  await forceRebindNotificationListener();
+}
+
+/**
+ * Android considera il permesso "Accesso alle notifiche" ancora concesso
+ * (compare nell'elenco di sistema) anche quando il collegamento vero e
+ * proprio al nostro NotificationListenerService si è interrotto — capita
+ * tipicamente dopo aver installato una nuova build dell'app sopra quella
+ * precedente, finché il telefono non viene riavviato. In quello stato la
+ * schermata "Importa da notifiche" mostra "Attivo" ma nessuna notifica
+ * arriva più al task in background. requestRebind() (via il modulo nativo)
+ * è l'API pubblica pensata apposta per questo: la richiamiamo ad ogni avvio
+ * dell'app, è innocua se il servizio è già collegato correttamente.
+ */
+async function forceRebindNotificationListener() {
+  if (Platform.OS !== 'android') return;
+  try {
+    await NativeModules.RNAndroidNotificationListener?.forceRebind?.();
+  } catch {
+    // Non critico: se fallisce, l'utente può comunque riattivare a mano il
+    // permesso dalla schermata "Importa da notifiche" per ottenere lo stesso effetto.
+  }
 }
 
 export async function rescheduleAllNotifications() {

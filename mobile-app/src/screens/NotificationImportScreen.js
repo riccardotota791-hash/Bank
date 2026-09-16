@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Platform, NativeModules, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Platform, NativeModules, Alert, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenContainer, Card, SectionTitle, PrimaryButton, Badge } from '../components/UI';
+import { ScreenContainer, Card, SectionTitle, PrimaryButton, SecondaryButton, Badge } from '../components/UI';
 import { COLORS, SPACING, FONT } from '../constants/theme';
 import { getNotificationDebugLog } from '../services/notificationDebugLog';
 
@@ -59,6 +59,19 @@ export default function NotificationImportScreen() {
   const handleActivate = () => {
     if (!isSupported) return;
     RNAndroidNotificationListener.requestPermission();
+  };
+
+  const handleForceRebind = async () => {
+    if (!isSupported) return;
+    try {
+      await RNAndroidNotificationListener.forceRebind();
+      Alert.alert(
+        'Servizio riavviato',
+        'Ho chiesto ad Android di ricollegare il servizio di lettura notifiche. Utile soprattutto dopo aver installato una nuova versione dell\'app: prova ora con un pagamento reale.'
+      );
+    } catch {
+      Alert.alert('Non riuscito', 'Non sono riuscito a forzare il riavvio del servizio. Riprova più tardi.');
+    }
   };
 
   const badge = STATUS_LABELS[status] || STATUS_LABELS.unknown;
@@ -131,6 +144,16 @@ export default function NotificationImportScreen() {
                     in background".
                   </Text>
                 </View>
+
+                <Card style={{ marginTop: SPACING.lg }}>
+                  <Text style={styles.label}>Il permesso è attivo ma non arriva nulla?</Text>
+                  <Text style={styles.hint}>
+                    Dopo aver installato una nuova versione dell'app, Android a volte lascia il permesso segnato
+                    come attivo ma smette di collegare davvero il servizio finché non riavvii il telefono. Prova
+                    prima questo pulsante, che chiede ad Android di ricollegarlo subito.
+                  </Text>
+                  <SecondaryButton title="Forza riavvio del servizio" onPress={handleForceRebind} style={{ marginTop: SPACING.md }} />
+                </Card>
 
                 <Card style={{ marginTop: SPACING.lg }}>
                   <Text style={styles.label}>Diagnostica ultime notifiche</Text>
