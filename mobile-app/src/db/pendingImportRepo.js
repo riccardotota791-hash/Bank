@@ -17,16 +17,17 @@ export async function addPendingImport({ amount, suggested_type, suggested_categ
 
 /**
  * Cerca proposte "da confermare" già in coda che sembrano lo stesso
- * movimento (stessa data e importo, tipo escluso — vedi il commento su
- * findSimilarTransactions). Serve per non riproporre due volte la stessa
- * operazione bancaria quando arriva da fonti diverse (es. notifica IsyBank
- * e poi un file Excel che copre lo stesso periodo), dato che quella già in
- * coda potrebbe non essere ancora stata confermata come vera transazione.
+ * movimento (stesso importo e data entro un giorno, tipo escluso — vedi il
+ * commento su findSimilarTransactions). Serve per non riproporre due volte
+ * la stessa operazione bancaria quando arriva da fonti diverse (es.
+ * notifica IsyBank e poi un file Excel che copre lo stesso periodo), dato
+ * che quella già in coda potrebbe non essere ancora stata confermata come
+ * vera transazione.
  */
 export async function findSimilarPendingImports({ date, amount }) {
   const db = await getDb();
   return db.getAllAsync(
-    "SELECT id, merchant FROM pending_import WHERE status = 'pending' AND date = ? AND ABS(amount - ?) < 0.01",
+    "SELECT id, merchant FROM pending_import WHERE status = 'pending' AND ABS(julianday(date) - julianday(?)) <= 1 AND ABS(amount - ?) < 0.01",
     [date, amount]
   );
 }

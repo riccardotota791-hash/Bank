@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { resetAllData } from '../db/database';
 import { rescheduleAllNotifications } from '../services/notifications';
 import { COLORS, RADIUS, SPACING, FONT } from '../constants/theme';
+import { BUILD_COMMIT, BUILD_TIME } from '../constants/buildInfo';
 
 const WEEKDAYS = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
 
@@ -175,6 +176,9 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.aboutBlock}>
           <Text style={styles.aboutText}>
             Risparmio Buffett · app locale, nessun account. Tutti i dati restano sul tuo dispositivo.
+          </Text>
+          <Text style={[styles.aboutText, { marginTop: SPACING.xs }]}>
+            Build {BUILD_COMMIT} · {BUILD_TIME}
           </Text>
         </View>
 

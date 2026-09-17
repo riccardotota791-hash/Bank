@@ -19,19 +19,21 @@ export async function updateTransaction(id, { amount, type, category_id, note, d
 }
 
 /**
- * Movimenti già esistenti con la stessa data e importo (tolleranza 1
- * centesimo) — candidati per il controllo duplicati degli importatori
- * (Excel/CSV, notifiche bancarie). Il tipo (entrata/uscita) NON entra nel
- * confronto: dipende dal segno o dalla colonna scelta durante la
- * mappatura del file, che può risultare diverso da un import all'altro
- * (colonna sbagliata, formato del file cambiato) pur trattandosi dello
- * stesso identico movimento — richiedere anche quello faceva perdere
- * duplicati veri più spesso di quanto impedisse falsi positivi.
+ * Movimenti già esistenti con importo uguale (tolleranza 1 centesimo) e
+ * data entro un giorno da quella indicata — candidati per il controllo
+ * duplicati degli importatori (Excel/CSV, notifiche bancarie). Il tipo
+ * (entrata/uscita) NON entra nel confronto: dipende dal segno o dalla
+ * colonna scelta durante la mappatura del file, che può risultare diverso
+ * da un import all'altro pur trattandosi dello stesso identico movimento.
+ * La tolleranza di un giorno sulla data serve per lo stesso motivo: fonti
+ * diverse (email, notifica push, estratto conto) possono registrare la
+ * "data" di uno stesso pagamento in momenti leggermente diversi (data
+ * contabile vs data valuta, fuso orario dell'header email, ecc.).
  */
 export async function findSimilarTransactions({ date, amount }) {
   const db = await getDb();
   return db.getAllAsync(
-    'SELECT id, note FROM transactions WHERE date = ? AND ABS(amount - ?) < 0.01',
+    "SELECT id, note FROM transactions WHERE ABS(julianday(date) - julianday(?)) <= 1 AND ABS(amount - ?) < 0.01",
     [date, amount]
   );
 }

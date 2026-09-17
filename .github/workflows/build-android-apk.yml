@@ -103,6 +103,18 @@ jobs:
             echo "app.json invariato, nessun projectId da salvare."
           fi
 
+      # Incorpora commit e orario reali nell'APK (schermata Impostazioni):
+      # senza questo, quando un fix "non sembra funzionare" non c'è modo di
+      # verificare dal telefono se il problema è che il fix è sbagliato o che
+      # il telefono sta ancora usando un APK installato prima del fix.
+      - name: Write build info
+        run: |
+          cat > src/constants/buildInfo.js <<EOF
+          export const BUILD_COMMIT = '${GITHUB_SHA::7}';
+          export const BUILD_TIME = '$(date -u +"%Y-%m-%d %H:%M UTC")';
+          EOF
+          cat src/constants/buildInfo.js
+
       # Build in locale sul runner (non sui server cloud di EAS): non consuma
       # la quota mensile di build cloud del piano Free, solo più lento sulla
       # prima esecuzione (poi la cache Gradle velocizza le successive).
