@@ -91,6 +91,13 @@ export default function NotificationImportScreen() {
           altrove: solo quelle che corrispondono esattamente al formato dei pagamenti IsyBank vengono lette,
           tutte le altre (messaggi, altre app, ecc.) sono ignorate.
         </Text>
+        <Text style={[styles.description, { marginTop: SPACING.sm }]}>
+          Il riconoscimento avviene in due modi indipendenti: uno più veloce che scrive subito il movimento
+          da confermare anche se l'app è completamente chiusa, e uno di riserva che passa dall'app e lascia
+          traccia qui sotto in "Diagnostica". Se un pagamento compare direttamente tra i movimenti da
+          confermare ma non ha una voce corrispondente nella diagnostica, è normale: ha funzionato il primo
+          dei due.
+        </Text>
 
         {!isSupported ? (
           <View style={styles.noteBox}>

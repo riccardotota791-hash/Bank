@@ -22,11 +22,237 @@ index 3cb5acc..87d6cef 100644
  
          <receiver
              android:name="com.lesimoes.androidnotificationlistener.BootUpReceiver"
+diff --git a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/IsyBankNativeImporter.java b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/IsyBankNativeImporter.java
+new file mode 100644
+index 0000000..48138c5
+--- /dev/null
++++ b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/IsyBankNativeImporter.java
+@@ -0,0 +1,198 @@
++package com.lesimoes.androidnotificationlistener;
++
++import android.app.Notification;
++import android.content.ContentValues;
++import android.content.Context;
++import android.database.Cursor;
++import android.database.sqlite.SQLiteDatabase;
++import android.service.notification.StatusBarNotification;
++import android.util.Log;
++
++import java.io.File;
++import java.text.SimpleDateFormat;
++import java.util.Calendar;
++import java.util.Date;
++import java.util.Locale;
++import java.util.TimeZone;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++
++/**
++ * Ultima rete di sicurezza per l'import dei pagamenti IsyBank: scrive
++ * direttamente nel database SQLite dell'app (stesso file usato da
++ * expo-sqlite, in WAL mode — supporta scritture concorrenti nello stesso
++ * processo) SENZA passare da React Native. Il resto della pipeline
++ * (avvio di RNAndroidNotificationListenerHeadlessJsTaskService -> task JS
++ * -> importFromBankNotification in JS) richiede che Android avvii con
++ * successo un servizio e faccia partire un'istanza React Native entro
++ * pochi secondi: su molti telefoni (gestione batteria aggressiva,
++ * restrizioni OEM su app fuori Play Store, processo già ucciso) quel
++ * passaggio può fallire silenziosamente prima ancora che il task JS possa
++ * scrivere qualcosa. Questo listener nativo gira invece nello stesso
++ * identico callback onNotificationPosted() che Android chiama in modo
++ * affidabile ogni volta — è la parte della catena che finora NON stava
++ * fallendo — quindi cattura il pagamento anche quando tutto il resto non
++ * parte. Se poi il task JS riesce comunque a partire, il suo controllo
++ * duplicati (stessa data/importo, già in pending_import o transactions)
++ * lo fa scartare senza creare una proposta doppia.
++ */
++final class IsyBankNativeImporter {
++    private static final String TAG = "RNAndroidNotificationListener";
++
++    // Stesso pattern di src/utils/notificationParser.js: "Hai pagato 1,80 €
++    // con la carta *9074 il 13.09 alle ore 20:27 da BARI FOOD, MUNGIVACCA."
++    private static final Pattern PAYMENT_PATTERN = Pattern.compile(
++        "hai pagato\\s+([\\d.,]+)\\s*€\\s*con la carta\\s*\\*?\\s*(\\d+)\\s+il\\s+(\\d{1,2})[./](\\d{1,2})(?:[./](\\d{2,4}))?\\s+alle ore\\s+(\\d{1,2}):(\\d{2})\\s+da\\s+(.+?)\\.?\\s*$",
++        Pattern.CASE_INSENSITIVE
++    );
++
++    static void tryImport(Context context, StatusBarNotification sbn) {
++        Notification notification = sbn.getNotification();
++        if (notification == null || notification.extras == null) return;
++
++        CharSequence bigTextCs = notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT);
++        CharSequence textCs = notification.extras.getCharSequence(Notification.EXTRA_TEXT);
++        String raw = bigTextCs != null ? bigTextCs.toString() : (textCs != null ? textCs.toString() : "");
++        raw = raw.trim();
++        if (raw.isEmpty()) return;
++
++        Matcher m = PAYMENT_PATTERN.matcher(raw);
++        if (!m.find()) return;
++
++        double amount = parseAmount(m.group(1));
++        if (amount <= 0) return;
++
++        int day = Integer.parseInt(m.group(3));
++        int month = Integer.parseInt(m.group(4));
++        if (day < 1 || day > 31 || month < 1 || month > 12) return;
++
++        String yearRaw = m.group(5);
++        int hour = Integer.parseInt(m.group(6));
++        int minute = Integer.parseInt(m.group(7));
++        String merchant = m.group(8).trim().replaceAll("\\s+", " ");
++
++        int year = resolveYear(day, month, yearRaw, sbn.getPostTime());
++        String date = String.format(Locale.US, "%04d-%02d-%02d", year, month, day);
++        String time = String.format(Locale.US, "%02d:%02d", hour, minute);
++
++        File dbFile = new File(context.getFilesDir(), "SQLite/finance.db");
++        // L'app non ha ancora creato il database (primissimo avvio mai
++        // completato): niente da fare finché l'utente non apre l'app una
++        // volta, che crea lo schema.
++        if (!dbFile.exists()) return;
++
++        SQLiteDatabase db = null;
++        try {
++            db = SQLiteDatabase.openDatabase(dbFile.getPath(), null, SQLiteDatabase.OPEN_READWRITE);
++
++            if (isDuplicate(db, date, amount)) {
++                Log.d(TAG, "IsyBank native import: duplicato ignorato " + date + " " + amount);
++                return;
++            }
++
++            Long categoryId = findFallbackExpenseCategoryId(db);
++            String externalId = "isybank-native:" + date + ":" + String.format(Locale.US, "%.2f", amount) + ":" + time;
++
++            ContentValues values = new ContentValues();
++            values.put("amount", amount);
++            values.put("suggested_type", "expense");
++            if (categoryId != null) values.put("suggested_category_id", categoryId);
++            values.put("merchant", merchant);
++            values.put("raw_snippet", "Carta *" + m.group(2) + " · " + time);
++            values.put("date", date);
++            values.put("gmail_message_id", externalId);
++            values.put("status", "pending");
++            values.put("created_at", isoNow());
++
++            long rowId = db.insertWithOnConflict("pending_import", null, values, SQLiteDatabase.CONFLICT_IGNORE);
++            Log.d(TAG, "IsyBank native import: riga " + rowId + " (" + amount + "€ " + date + " " + merchant + ")");
++        } catch (Exception e) {
++            Log.w(TAG, "IsyBank native import fallito", e);
++        } finally {
++            if (db != null) db.close();
++        }
++    }
++
++    private static boolean isDuplicate(SQLiteDatabase db, String date, double amount) {
++        String[] args = { date, String.valueOf(amount) };
++
++        Cursor c1 = db.rawQuery(
++            "SELECT 1 FROM transactions WHERE ABS(julianday(date) - julianday(?)) <= 1 AND ABS(amount - ?) < 0.01 LIMIT 1",
++            args
++        );
++        boolean found;
++        try {
++            found = c1.moveToFirst();
++        } finally {
++            c1.close();
++        }
++        if (found) return true;
++
++        Cursor c2 = db.rawQuery(
++            "SELECT 1 FROM pending_import WHERE status = 'pending' AND ABS(julianday(date) - julianday(?)) <= 1 AND ABS(amount - ?) < 0.01 LIMIT 1",
++            args
++        );
++        try {
++            return c2.moveToFirst();
++        } finally {
++            c2.close();
++        }
++    }
++
++    private static Long findFallbackExpenseCategoryId(SQLiteDatabase db) {
++        Cursor c = db.rawQuery("SELECT id FROM categories WHERE type = 'expense' AND name = 'Altro' LIMIT 1", null);
++        try {
++            if (c.moveToFirst()) return c.getLong(0);
++        } finally {
++            c.close();
++        }
++        Cursor c2 = db.rawQuery("SELECT id FROM categories WHERE type = 'expense' LIMIT 1", null);
++        try {
++            if (c2.moveToFirst()) return c2.getLong(0);
++        } finally {
++            c2.close();
++        }
++        return null;
++    }
++
++    private static double parseAmount(String raw) {
++        try {
++            // Formato italiano: punto = migliaia, virgola = decimali (es. "1.234,56").
++            String s = raw.trim().replace(".", "").replace(",", ".");
++            return Double.parseDouble(s);
++        } catch (Exception e) {
++            return 0;
++        }
++    }
++
++    private static int resolveYear(int day, int month, String yearRaw, long postTimeMillis) {
++        if (yearRaw != null && !yearRaw.isEmpty()) {
++            int y = Integer.parseInt(yearRaw);
++            return yearRaw.length() == 2 ? 2000 + y : y;
++        }
++
++        Calendar now = Calendar.getInstance();
++        if (postTimeMillis > 0) now.setTimeInMillis(postTimeMillis);
++        int year = now.get(Calendar.YEAR);
++
++        Calendar candidate = Calendar.getInstance();
++        candidate.clear();
++        candidate.set(year, month - 1, day);
++
++        long diffDays = (candidate.getTimeInMillis() - now.getTimeInMillis()) / 86400000L;
++        // Se la data dedotta risultasse più di 2 giorni nel futuro rispetto
++        // ad "ora", si riferisce quasi certamente all'anno precedente
++        // (capita solo a cavallo di Capodanno) — stessa logica di
++        // resolveYear() in notificationParser.js.
++        if (diffDays > 2) year -= 1;
++        return year;
++    }
++
++    private static String isoNow() {
++        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
++        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
++        return sdf.format(new Date());
++    }
++
++    private IsyBankNativeImporter() {}
++}
 diff --git a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java
-index 350e4c2..25c0d23 100644
+index 350e4c2..f6a40fc 100644
 --- a/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java
 +++ b/node_modules/react-native-android-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNAndroidNotificationListener.java
-@@ -36,7 +36,17 @@ public class RNAndroidNotificationListener extends NotificationListenerService {
+@@ -25,6 +25,21 @@ public class RNAndroidNotificationListener extends NotificationListenerService {
+ 
+         Context context = getApplicationContext();
+ 
++        // Rete di sicurezza: scrive il pagamento IsyBank direttamente nel
++        // database SQLite dell'app da questo stesso callback, che Android
++        // chiama in modo affidabile — a differenza di tutto quello che segue
++        // (avviare un servizio, far partire React Native, eseguire il task
++        // JS), che su molti telefoni può fallire silenziosamente prima di
++        // arrivare a scrivere qualsiasi cosa. Vedi IsyBankNativeImporter per
++        // i dettagli; se il task JS più sotto riesce comunque a partire, il
++        // suo stesso controllo duplicati (stessa data/importo) evita che il
++        // pagamento venga proposto due volte.
++        try {
++            IsyBankNativeImporter.tryImport(context, sbn);
++        } catch (Throwable t) {
++            Log.w(TAG, "IsyBankNativeImporter non disponibile", t);
++        }
++
+         Intent serviceIntent = new Intent(context, RNAndroidNotificationListenerHeadlessJsTaskService.class);
+ 
+         RNNotification notification = new RNNotification(context, sbn);
+@@ -36,7 +51,17 @@ public class RNAndroidNotificationListener extends NotificationListenerService {
  
          HeadlessJsTaskService.acquireWakeLockNow(context);
  
