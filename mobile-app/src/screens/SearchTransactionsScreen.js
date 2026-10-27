@@ -4,8 +4,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, EmptyState, SecondaryButton } from '../components/UI';
 import CategoryGrid from '../components/CategoryGrid';
-import TransactionRow from '../components/TransactionRow';
-import { searchTransactions } from '../db/transactionsRepo';
+import SwipeToDeleteRow from '../components/SwipeToDeleteRow';
+import { useApp } from '../context/AppContext';
+import { searchTransactions, deleteTransaction } from '../db/transactionsRepo';
 import { getAllCategories } from '../db/categoriesRepo';
 import { COLORS, RADIUS, SPACING, FONT } from '../constants/theme';
 import { formatEuro, formatDateIT } from '../utils/formatters';
@@ -18,6 +19,7 @@ const TYPE_OPTIONS = [
 ];
 
 export default function SearchTransactionsScreen({ navigation }) {
+  const { refresh } = useApp();
   const [text, setText] = useState('');
   const [type, setType] = useState(null);
   const [categoryId, setCategoryId] = useState(null);
@@ -68,6 +70,12 @@ export default function SearchTransactionsScreen({ navigation }) {
     const timeout = setTimeout(runSearch, 300);
     return () => clearTimeout(timeout);
   }, [runSearch, text, type, categoryId, minAmount, maxAmount, startDate, endDate]);
+
+  const handleDeleteTransaction = async (tx) => {
+    await deleteTransaction(tx.id);
+    refresh();
+    runSearch();
+  };
 
   const handleClearFilters = () => {
     setType(null);
@@ -223,7 +231,11 @@ export default function SearchTransactionsScreen({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <TransactionRow transaction={item} onPress={(tx) => navigation.navigate('AddTransaction', { transactionId: tx.id })} />
+          <SwipeToDeleteRow
+            transaction={item}
+            onPress={(tx) => navigation.navigate('AddTransaction', { transactionId: tx.id })}
+            onDelete={handleDeleteTransaction}
+          />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={

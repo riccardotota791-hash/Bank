@@ -3,15 +3,15 @@ import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, EmptyState } from '../components/UI';
-import TransactionRow from '../components/TransactionRow';
+import SwipeToDeleteRow from '../components/SwipeToDeleteRow';
 import { useApp } from '../context/AppContext';
-import { getTransactionsByRange, getTotalsForRange } from '../db/transactionsRepo';
+import { getTransactionsByRange, getTotalsForRange, deleteTransaction } from '../db/transactionsRepo';
 import { COLORS, SPACING, FONT } from '../constants/theme';
 import { monthLabel, formatEuro, getFinancialPeriodRange } from '../utils/formatters';
 
 export default function MonthDetailScreen({ route, navigation }) {
   const { monthKey } = route.params;
-  const { dataVersion, settings } = useApp();
+  const { dataVersion, refresh, settings } = useApp();
   const [transactions, setTransactions] = useState([]);
   const [totals, setTotals] = useState({ income: 0, expense: 0, saving: 0, net: 0 });
   const range = getFinancialPeriodRange(monthKey, settings?.payday ?? 27);
@@ -32,6 +32,11 @@ export default function MonthDetailScreen({ route, navigation }) {
     }, [load, dataVersion])
   );
 
+  const handleDeleteTransaction = async (tx) => {
+    await deleteTransaction(tx.id);
+    refresh();
+  };
+
   return (
     <ScreenContainer>
       <View style={styles.totalsRow}>
@@ -46,7 +51,11 @@ export default function MonthDetailScreen({ route, navigation }) {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <TransactionRow transaction={item} onPress={(tx) => navigation.navigate('AddTransaction', { transactionId: tx.id })} />
+          <SwipeToDeleteRow
+            transaction={item}
+            onPress={(tx) => navigation.navigate('AddTransaction', { transactionId: tx.id })}
+            onDelete={handleDeleteTransaction}
+          />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, Card, SectionTitle, DangerButton } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { resetAllData } from '../db/database';
+import { deleteAllTransactions } from '../db/transactionsRepo';
 import { rescheduleAllNotifications } from '../services/notifications';
 import { COLORS, RADIUS, SPACING, FONT } from '../constants/theme';
 import { BUILD_COMMIT, BUILD_TIME } from '../constants/buildInfo';
@@ -13,6 +14,7 @@ const WEEKDAYS = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', '
 export default function SettingsScreen({ navigation }) {
   const { settings, updateSetting, refresh } = useApp();
   const [resetting, setResetting] = useState(false);
+  const [deletingTransactions, setDeletingTransactions] = useState(false);
   const [initialSavingsInput, setInitialSavingsInput] = useState(null);
 
   if (!settings) return null;
@@ -60,6 +62,26 @@ export default function SettingsScreen({ navigation }) {
             await resetAllData();
             refresh();
             setResetting(false);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAllTransactions = () => {
+    Alert.alert(
+      'Eliminare tutti i movimenti?',
+      "Verranno eliminate tutte le entrate, le uscite e i risparmi registrati. Categorie e impostazioni restano invariate. L'operazione non è reversibile.",
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Elimina',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingTransactions(true);
+            await deleteAllTransactions();
+            refresh();
+            setDeletingTransactions(false);
           },
         },
       ]
@@ -171,7 +193,15 @@ export default function SettingsScreen({ navigation }) {
         </Card>
 
         <SectionTitle style={{ marginTop: SPACING.lg }}>Dati</SectionTitle>
-        <DangerButton title={resetting ? 'Azzeramento...' : 'Azzera tutti i dati'} onPress={handleReset} />
+        <DangerButton
+          title={deletingTransactions ? 'Eliminazione...' : 'Elimina tutti i movimenti'}
+          onPress={handleDeleteAllTransactions}
+        />
+        <DangerButton
+          title={resetting ? 'Azzeramento...' : 'Azzera tutti i dati'}
+          onPress={handleReset}
+          style={{ marginTop: SPACING.sm }}
+        />
 
         <View style={styles.aboutBlock}>
           <Text style={styles.aboutText}>

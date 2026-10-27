@@ -43,6 +43,17 @@ export async function deleteTransaction(id) {
   await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
 }
 
+/**
+ * Elimina tutti i movimenti registrati (entrate, uscite, risparmi), senza
+ * toccare categorie, impostazioni o le proposte "da confermare" ancora in
+ * sospeso: a differenza di resetAllData() (azzeramento completo), qui si
+ * svuota solo il registro dei movimenti già aggiunti.
+ */
+export async function deleteAllTransactions() {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM transactions');
+}
+
 export async function getTransactionById(id) {
   const db = await getDb();
   return db.getFirstAsync(

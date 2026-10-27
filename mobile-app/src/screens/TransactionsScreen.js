@@ -4,10 +4,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, EmptyState, SectionTitle } from '../components/UI';
 import MonthSelector from '../components/MonthSelector';
-import TransactionRow from '../components/TransactionRow';
 import SwipeToConfirmRow from '../components/SwipeToConfirmRow';
+import SwipeToDeleteRow from '../components/SwipeToDeleteRow';
 import { useApp } from '../context/AppContext';
-import { getTransactionsByRange, getTotalsForRange } from '../db/transactionsRepo';
+import { getTransactionsByRange, getTotalsForRange, deleteTransaction } from '../db/transactionsRepo';
 import { getPendingImports } from '../db/pendingImportRepo';
 import { confirmImport, rejectImport } from '../services/gmailService';
 import { COLORS, SPACING, FONT } from '../constants/theme';
@@ -50,6 +50,11 @@ export default function TransactionsScreen({ navigation }) {
     refresh();
   };
 
+  const handleDeleteTransaction = async (tx) => {
+    await deleteTransaction(tx.id);
+    refresh();
+  };
+
   return (
     <ScreenContainer>
       <View style={styles.headerBlock}>
@@ -89,7 +94,11 @@ export default function TransactionsScreen({ navigation }) {
           ) : null
         }
         renderItem={({ item }) => (
-          <TransactionRow transaction={item} onPress={(tx) => navigation.navigate('AddTransaction', { transactionId: tx.id })} />
+          <SwipeToDeleteRow
+            transaction={item}
+            onPress={(tx) => navigation.navigate('AddTransaction', { transactionId: tx.id })}
+            onDelete={handleDeleteTransaction}
+          />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
