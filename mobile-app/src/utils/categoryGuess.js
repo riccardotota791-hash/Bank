@@ -10,7 +10,12 @@ const CATEGORY_KEYWORDS = {
     'parking', 'autogrill', 'bus ', 'treno', 'metro', 'ncc',
   ],
   'Assicurazione macchina': [
-    'assicurazione macchina', 'assicurazione auto', 'rc auto', 'rca ', 'polizza auto',
+    // "rca " era troppo corta per il confronto "senza spazi" qui sotto: il
+    // suo spazio finale viene tolto e "rca" risulta una sottostringa di
+    // parole comuni come "supeRCAto", facendo scambiare la spesa al
+    // supermercato per un'assicurazione auto. "rc auto" resta comunque la
+    // forma diffusa per indicare la Responsabilità Civile Auto.
+    'assicurazione macchina', 'assicurazione auto', 'rc auto', 'polizza auto',
     'genertel', 'genialloyd', 'linear assicurazioni', 'direct line', 'unipol', 'allianz auto',
   ],
   'Spesa alimentare': [

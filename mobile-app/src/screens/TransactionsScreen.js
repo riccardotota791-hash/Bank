@@ -103,6 +103,10 @@ export default function TransactionsScreen({ navigation }) {
         }
       />
 
+      <Pressable style={styles.fabSecondary} onPress={() => navigation.navigate('VoiceAdd')}>
+        <Ionicons name="mic" size={22} color={COLORS.primary} />
+      </Pressable>
+
       <Pressable style={styles.fab} onPress={() => navigation.navigate('AddTransaction', { defaultDate: monthKey })}>
         <Ionicons name="add" size={28} color={COLORS.white} />
       </Pressable>
@@ -174,5 +178,23 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+  },
+  fabSecondary: {
+    position: 'absolute',
+    right: SPACING.lg,
+    bottom: SPACING.lg + 58 + SPACING.md,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.shadow,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
 });

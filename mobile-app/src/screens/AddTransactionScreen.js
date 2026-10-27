@@ -16,11 +16,12 @@ export default function AddTransactionScreen({ route, navigation }) {
   const { refresh, settings } = useApp();
   const editingId = route.params?.transactionId;
   const isEditing = !!editingId;
+  const prefill = route.params?.prefill;
 
-  const [type, setType] = useState('expense');
-  const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState(null);
-  const [note, setNote] = useState('');
+  const [type, setType] = useState(prefill?.type || 'expense');
+  const [amount, setAmount] = useState(prefill?.amount != null ? String(prefill.amount).replace('.', ',') : '');
+  const [categoryId, setCategoryId] = useState(prefill?.categoryId ?? null);
+  const [note, setNote] = useState(prefill?.note || '');
   const [date, setDate] = useState(() => {
     const defaultMonth = route.params?.defaultDate;
     if (!defaultMonth) return new Date();

@@ -42,6 +42,13 @@
           "color": "#1F6F50"
         }
       ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Serve il microfono per aggiungere un movimento dicendolo a voce.",
+          "speechRecognitionPermission": "Serve per riconoscere quello che dici e trasformarlo in un movimento."
+        }
+      ],
       "./plugins/withAndroidManifestFixes"
     ],
     "extra": {
