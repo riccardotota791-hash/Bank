@@ -190,6 +190,12 @@ export default function SettingsScreen({ navigation }) {
         <SectionTitle style={{ marginTop: SPACING.lg }}>Personalizzazione</SectionTitle>
         <Card>
           <NavRow icon="pricetags-outline" label="Gestisci categorie" onPress={() => navigation.navigate('CategoryManager')} />
+          <NavRow
+            icon="calendar-outline"
+            label="Abbonamenti e spese periodiche"
+            hint="Metti da parte quote mensili per spese grosse ma prevedibili"
+            onPress={() => navigation.navigate('Subscriptions')}
+          />
         </Card>
 
         <SectionTitle style={{ marginTop: SPACING.lg }}>Dati</SectionTitle>

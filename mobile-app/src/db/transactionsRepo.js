@@ -1,11 +1,19 @@
 import { getDb } from './database';
 import { financialMonthKeyOf } from '../utils/formatters';
 
-export async function addTransaction({ amount, type, category_id = null, note = '', date, source = 'manual' }) {
+export async function addTransaction({
+  amount,
+  type,
+  category_id = null,
+  note = '',
+  date,
+  source = 'manual',
+  fundedBySubscription = false,
+}) {
   const db = await getDb();
   const result = await db.runAsync(
-    'INSERT INTO transactions (amount, type, category_id, note, date, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [amount, type, category_id, note, date, source, new Date().toISOString()]
+    'INSERT INTO transactions (amount, type, category_id, note, date, source, funded_by_subscription, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [amount, type, category_id, note, date, source, fundedBySubscription ? 1 : 0, new Date().toISOString()]
   );
   return result.lastInsertRowId;
 }
@@ -47,11 +55,13 @@ export async function deleteTransaction(id) {
  * Elimina tutti i movimenti registrati (entrate, uscite, risparmi), senza
  * toccare categorie, impostazioni o le proposte "da confermare" ancora in
  * sospeso: a differenza di resetAllData() (azzeramento completo), qui si
- * svuota solo il registro dei movimenti già aggiunti.
+ * svuota solo il registro dei movimenti già aggiunti. Azzera anche il
+ * saldo accantonato degli abbonamenti, dato che erano proprio i movimenti
+ * di risparmio appena cancellati a tenerlo aggiornato.
  */
 export async function deleteAllTransactions() {
   const db = await getDb();
-  await db.runAsync('DELETE FROM transactions');
+  await db.execAsync('DELETE FROM transactions; UPDATE subscriptions SET saved_amount = 0;');
 }
 
 export async function getTransactionById(id) {
@@ -91,11 +101,21 @@ export async function getRecentTransactions(limit = 10) {
   );
 }
 
+/**
+ * Le spese pagate con i soldi già accantonati per un abbonamento
+ * (funded_by_subscription, vedi subscriptionsRepo) sono escluse da tutti i
+ * totali qui sotto: i soldi non arrivano dal reddito di questo periodo, ma
+ * da mesi di accantonamento precedenti già conteggiati come risparmio a
+ * suo tempo, quindi non devono far crollare il tasso di risparmio o
+ * sforare il budget della categoria nel mese in cui arriva la scadenza.
+ * Restano comunque visibili per intero in Movimenti, Storico e Cerca:
+ * l'esclusione riguarda solo i totali aggregati usati per budget/consigli.
+ */
 export async function getTotalsForRange(range) {
   const db = await getDb();
   const rows = await db.getAllAsync(
     `SELECT type, COALESCE(SUM(amount), 0) as total FROM transactions
-     WHERE date >= ? AND date <= ? GROUP BY type`,
+     WHERE date >= ? AND date <= ? AND funded_by_subscription = 0 GROUP BY type`,
     [range.start, range.end]
   );
   const totals = { income: 0, expense: 0, saving: 0 };
@@ -110,7 +130,7 @@ export async function getCategoryTotalsForRange(range, type = 'expense') {
     `SELECT c.id as category_id, c.name, c.icon, c.color, c.monthly_budget,
             COALESCE(SUM(t.amount), 0) as total
      FROM categories c
-     LEFT JOIN transactions t ON t.category_id = c.id AND t.date >= ? AND t.date <= ? AND t.type = ?
+     LEFT JOIN transactions t ON t.category_id = c.id AND t.date >= ? AND t.date <= ? AND t.type = ? AND t.funded_by_subscription = 0
      WHERE c.type = ?
      GROUP BY c.id
      ORDER BY total DESC`,
@@ -124,7 +144,7 @@ export async function getCategoryAverageOverRanges(categoryId, ranges) {
   const clauses = ranges.map(() => '(date >= ? AND date <= ?)').join(' OR ');
   const params = ranges.flatMap((r) => [r.start, r.end]);
   const row = await db.getFirstAsync(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE category_id = ? AND (${clauses})`,
+    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE category_id = ? AND funded_by_subscription = 0 AND (${clauses})`,
     [categoryId, ...params]
   );
   return (row?.total || 0) / ranges.length;
@@ -145,7 +165,7 @@ export async function getYearTotals(year) {
   const db = await getDb();
   const rows = await db.getAllAsync(
     `SELECT type, COALESCE(SUM(amount), 0) as total FROM transactions
-     WHERE substr(date, 1, 4) = ? GROUP BY type`,
+     WHERE substr(date, 1, 4) = ? AND funded_by_subscription = 0 GROUP BY type`,
     [String(year)]
   );
   const totals = { income: 0, expense: 0, saving: 0 };

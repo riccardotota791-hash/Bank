@@ -52,6 +52,19 @@ export async function initDatabase() {
       note TEXT,
       date TEXT NOT NULL,
       source TEXT NOT NULL DEFAULT 'manual',
+      funded_by_subscription INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category_id INTEGER,
+      amount REAL NOT NULL,
+      frequency_months INTEGER NOT NULL DEFAULT 12,
+      next_due_date TEXT NOT NULL,
+      saved_amount REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
     );
@@ -83,7 +96,22 @@ export async function initDatabase() {
   await seedDefaultSettings(db);
   await migrateExpenseCategories(db);
   await migrateSavingCategories(db);
+  await migrateFundedBySubscriptionColumn(db);
   await seedExcelImportOnce(db);
+}
+
+/**
+ * Le installazioni esistenti hanno già la tabella transactions senza la
+ * colonna funded_by_subscription (introdotta con gli Abbonamenti): va
+ * aggiunta a mano, CREATE TABLE IF NOT EXISTS non altera tabelle già
+ * create in precedenza. Idempotente: su un'installazione nuova o già
+ * aggiornata non fa nulla.
+ */
+async function migrateFundedBySubscriptionColumn(db) {
+  const columns = await db.getAllAsync('PRAGMA table_info(transactions)');
+  if (!columns.some((c) => c.name === 'funded_by_subscription')) {
+    await db.execAsync('ALTER TABLE transactions ADD COLUMN funded_by_subscription INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 /**
@@ -209,6 +237,7 @@ export async function resetAllData() {
   await db.execAsync(`
     DELETE FROM transactions;
     DELETE FROM pending_import;
+    DELETE FROM subscriptions;
     DELETE FROM categories;
     DELETE FROM settings;
   `);
